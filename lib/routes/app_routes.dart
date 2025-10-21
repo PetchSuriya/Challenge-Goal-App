@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../features/login/view/login_page.dart';
 import '../features/profile/view/profile_page.dart';
 import '../features/profile/view/reset_password_page.dart';
+import '../features/dashboard/view/dashboard_page.dart';
+import '../features/goal/view/goal_page.dart';
 import '../services/auth_service.dart';
 import '../core/constants/app_constants.dart';
 
@@ -69,6 +71,24 @@ class AppRoutes {
         builder: (context, state) => const ProfilePage(),
       ),
 
+      /// หน้า Dashboard - หน้าแรกหลังจากล็อกอินสำเร็จ
+      /// Path: '/dashboard'
+      /// Access: Protected (ต้อง login ก่อน)
+      GoRoute(
+        path: AppConstants.dashboardRoute,
+        name: 'dashboard',
+        builder: (context, state) => const DashboardPage(),
+      ),
+
+      /// หน้า Goals - จัดการเป้าหมาย
+      /// Path: '/goals'
+      /// Access: Protected (ต้อง login ก่อน)
+      GoRoute(
+        path: AppConstants.goalRoute,
+        name: 'goals',
+        builder: (context, state) => const GoalPage(),
+      ),
+
       /// หน้า Reset Password - รีเซ็ตรหัสผ่าน
       /// Path: '/reset-password'
       /// Access: Public (ทุกคนเข้าได้)
@@ -124,7 +144,7 @@ class AppRoutes {
                 // ตรวจสอบสถานะการ login และนำไปหน้าที่เหมาะสม
                 final isLoggedIn = await _authService.isLoggedIn();
                 final destination = isLoggedIn 
-                    ? AppConstants.profileRoute  // ถ้า login แล้วไป Profile
+                    ? AppConstants.dashboardRoute  // ถ้า login แล้วไป Dashboard
                     : AppConstants.loginRoute;   // ถ้ายังไม่ได้ login ไป Login
                 if (context.mounted) {
                   context.go(destination);
@@ -144,4 +164,6 @@ extension AppRouterExtension on GoRouter {
   void goToLogin() => go(AppConstants.loginRoute);
   void goToProfile() => go(AppConstants.profileRoute);
   void goToResetPassword() => go(AppConstants.resetPasswordRoute);
+  void goToDashboard() => go(AppConstants.dashboardRoute);
+  void goToGoals() => go(AppConstants.goalRoute);
 }

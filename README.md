@@ -41,6 +41,9 @@ lib/
 │   │   │   └── login_controller.dart
 │   │   └── view/
 │   │       └── login_page.dart
+│   ├── dashboard/                 # Dashboard feature (post-login landing)
+│   │   └── view/
+│   │       └── dashboard_page.dart
 │   └── profile/                   # Profile feature
 │       ├── controller/
 │       │   └── profile_controller.dart
@@ -174,8 +177,8 @@ The app expects the following API endpoints:
 ### Authentication Flow
 1. **App Launch** → Check if user is logged in
 2. **Not Logged In** → Show Login Page
-3. **Login Success** → Save JWT token → Navigate to Profile
-4. **Already Logged In** → Navigate directly to Profile
+3. **Login Success** → Save JWT token → Navigate to Dashboard
+4. **Already Logged In** → Navigate directly to Dashboard
 
 ### Profile Management
 1. **View Profile** → Display user information

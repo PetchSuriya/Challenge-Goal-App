@@ -61,8 +61,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        // Navigate to profile page
-        context.go(AppConstants.profileRoute);
+  // Navigate to dashboard page
+  context.go(AppConstants.dashboardRoute);
       }
     });
 
