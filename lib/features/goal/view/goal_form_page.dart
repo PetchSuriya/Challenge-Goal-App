@@ -123,52 +123,242 @@ class _GoalFormPageState extends State<GoalFormPage> {
   }
 
   void _showAddFriendDialog() {
-    final TextEditingController friendController = TextEditingController();
+    // Mock list of available friends
+    final List<Map<String, dynamic>> availableFriends = [
+      {'name': 'John doe', 'avatar': '👤'},
+      {'name': 'Jane doe', 'avatar': '👤'},
+      {'name': 'Alex Smith', 'avatar': '👤'},
+      {'name': 'Sarah Johnson', 'avatar': '👤'},
+      {'name': 'Mike Brown', 'avatar': '👤'},
+      {'name': 'Emma Wilson', 'avatar': '👤'},
+      {'name': 'Chris Lee', 'avatar': '👤'},
+      {'name': 'Lisa Anderson', 'avatar': '👤'},
+    ];
+    
+    final TextEditingController searchController = TextEditingController();
+    List<String> tempSelectedFriends = List.from(_selectedFriends);
+    List<Map<String, dynamic>> filteredFriends = List.from(availableFriends);
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Add Friend'),
-        content: TextField(
-          controller: friendController,
-          decoration: InputDecoration(
-            hintText: 'Enter friend name',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.purple, width: 2),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (friendController.text.isNotEmpty) {
-                setState(() {
-                  _selectedFriends.add(friendController.text);
-                });
-                Navigator.pop(context);
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          void filterFriends(String query) {
+            setDialogState(() {
+              if (query.isEmpty) {
+                filteredFriends = List.from(availableFriends);
+              } else {
+                filteredFriends = availableFriends
+                    .where((friend) => friend['name']
+                        .toLowerCase()
+                        .contains(query.toLowerCase()))
+                    .toList();
               }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+            });
+          }
+          
+          return Dialog(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              width: 400,
+              constraints: const BoxConstraints(maxHeight: 600),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  const Text(
+                    'Add friend',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Search Field
+                  TextField(
+                    controller: searchController,
+                    onChanged: filterFriends,
+                    decoration: InputDecoration(
+                      hintText: 'Enter friend name or e.g. john doe, jane doe',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF7B68EE), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Friends List
+                  Flexible(
+                    child: filteredFriends.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No friends found',
+                              style: TextStyle(color: Colors.grey.shade600),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: filteredFriends.length,
+                            itemBuilder: (context, index) {
+                              // แสดงเป็น 2 คอลัมน์
+                              if (index % 2 == 0) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      // คอลัมน์ซ้าย
+                                      Expanded(
+                                        child: _FriendCheckboxItem(
+                                          name: filteredFriends[index]['name'],
+                                          avatar: filteredFriends[index]['avatar'],
+                                          isSelected: tempSelectedFriends.contains(
+                                            filteredFriends[index]['name'],
+                                          ),
+                                          onChanged: (selected) {
+                                            setDialogState(() {
+                                              if (selected) {
+                                                tempSelectedFriends.add(
+                                                  filteredFriends[index]['name'],
+                                                );
+                                              } else {
+                                                tempSelectedFriends.remove(
+                                                  filteredFriends[index]['name'],
+                                                );
+                                              }
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // คอลัมน์ขวา
+                                      if (index + 1 < filteredFriends.length)
+                                        Expanded(
+                                          child: _FriendCheckboxItem(
+                                            name: filteredFriends[index + 1]['name'],
+                                            avatar: filteredFriends[index + 1]['avatar'],
+                                            isSelected: tempSelectedFriends.contains(
+                                              filteredFriends[index + 1]['name'],
+                                            ),
+                                            onChanged: (selected) {
+                                              setDialogState(() {
+                                                if (selected) {
+                                                  tempSelectedFriends.add(
+                                                    filteredFriends[index + 1]['name'],
+                                                  );
+                                                } else {
+                                                  tempSelectedFriends.remove(
+                                                    filteredFriends[index + 1]['name'],
+                                                  );
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        )
+                                      else
+                                        const Expanded(child: SizedBox()),
+                                    ],
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: BorderSide(color: Colors.grey.shade300),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF7B68EE), Color(0xFFDA70D6)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedFriends = tempSelectedFriends;
+                              });
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Add',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            child: const Text('Add'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -877,6 +1067,76 @@ class _GoalTypeCard extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Friend Checkbox Item Widget
+class _FriendCheckboxItem extends StatelessWidget {
+  final String name;
+  final String avatar;
+  final bool isSelected;
+  final Function(bool) onChanged;
+
+  const _FriendCheckboxItem({
+    required this.name,
+    required this.avatar,
+    required this.isSelected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!isSelected),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF7B68EE) : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.grey.shade300,
+              child: Text(
+                avatar,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Name
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: Colors.black87,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Checkbox
+            Checkbox(
+              value: isSelected,
+              onChanged: (value) => onChanged(value ?? false),
+              activeColor: const Color(0xFF7B68EE),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
             ),
           ],
         ),
