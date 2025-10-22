@@ -255,12 +255,14 @@ class _GoalFormPageState extends State<GoalFormPage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Image Picker (Left side)
+                          // Image Picker (Left side) - Match height with Goal Title + Duration
                           GestureDetector(
                             onTap: _pickImage,
                             child: Container(
                               width: 120,
-                              height: 120,
+                              constraints: const BoxConstraints(
+                                minHeight: 180, // เพิ่มความสูงให้ยืดตามเนื้อหา
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(16),
