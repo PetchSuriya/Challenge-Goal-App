@@ -8,6 +8,9 @@ class GoalDetailArgs {
   final int totalDays;
   final int completed;
   final int currentStreak;
+  final bool isMutual;
+  final String friendName;
+  final int friendCompleted;
 
   const GoalDetailArgs({
     required this.title,
@@ -15,6 +18,9 @@ class GoalDetailArgs {
     required this.totalDays,
     required this.completed,
     required this.currentStreak,
+    this.isMutual = false,
+    this.friendName = 'Friend',
+    this.friendCompleted = 0,
   });
 }
 
@@ -33,9 +39,13 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   late int completed;
   late int currentStreak;
   late List<bool> daysDone; // length = totalDays
+  late bool isMutual;
+  late String friendName;
+  late int friendCompleted;
 
   double get progress => totalDays == 0 ? 0 : completed / totalDays;
   int get remaining => (totalDays - completed).clamp(0, totalDays);
+  double get friendProgress => totalDays == 0 ? 0 : friendCompleted / totalDays;
 
   int get todayIndex {
     final day = DateTime.now().day - 1;
@@ -51,6 +61,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     totalDays = a?.totalDays ?? 30;
     completed = a?.completed ?? 22; // sample matches requirements
     currentStreak = a?.currentStreak ?? 12;
+    isMutual = a?.isMutual ?? false;
+    friendName = a?.friendName ?? 'Friend';
+    friendCompleted = a?.friendCompleted ?? 18;
     daysDone = List<bool>.filled(totalDays, false);
     for (int i = 0; i < completed && i < totalDays; i++) {
       daysDone[i] = true;
@@ -90,18 +103,71 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   Future<void> _deleteGoal() async {
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.4),
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Goal'),
-        content: const Text('Are you sure you want to delete this goal?'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        elevation: 2.5,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFEBEE), // light red without withOpacity
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.delete_forever, color: Colors.red),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Delete Goal',
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        content: const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: Text(
+            'This action cannot be undone. Are you sure you want to permanently delete this goal?',
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+          OutlinedButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.purple,
+              side: const BorderSide(color: Colors.purple),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            icon: const Icon(Icons.delete),
+            label: const Text('Delete'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
         ],
       ),
     );
     if (confirmed == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Goal deleted (demo)')),
+        const SnackBar(
+          content: Text('Goal deleted'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       // For demo, just pop back
       context.go(AppConstants.goalRoute);
@@ -187,6 +253,15 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                         ],
                       ),
                       const SizedBox(height: 12),
+                      // Your progress bar
+                      Row(
+                        children: [
+                          const Text('You', style: TextStyle(color: Colors.black)),
+                          const Spacer(),
+                          Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       TweenAnimationBuilder<double>(
                         tween: Tween<double>(begin: 0, end: progress),
                         duration: const Duration(milliseconds: 400),
@@ -200,6 +275,30 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           ),
                         ),
                       ),
+                      if (isMutual) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Text(friendName, style: const TextStyle(color: Colors.black)),
+                            const Spacer(),
+                            Text('${(friendProgress * 100).round()}%', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0, end: friendProgress),
+                          duration: const Duration(milliseconds: 400),
+                          builder: (context, value, _) => ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: LinearProgressIndicator(
+                              value: value,
+                              minHeight: 10,
+                              backgroundColor: Colors.grey.shade200,
+                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -329,11 +428,18 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 ],
               ),
               const SizedBox(height: 8),
-              Center(
-                child: TextButton(
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
                   onPressed: _deleteGoal,
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Delete Goal'),
+                  icon: const Icon(Icons.delete_forever),
+                  label: const Text('Delete Goal'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
                 ),
               ),
 

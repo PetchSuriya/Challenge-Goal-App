@@ -132,6 +132,8 @@ class _GoalPageState extends State<GoalPage> {
                 icon: Icons.groups_2_outlined,
                 themeColor: Colors.deepPurple,
                 progress: 0.6,
+                secondProgress: 0.55,
+                secondLabel: 'Friend',
                 durationText: '30 days goal',
                 streakText: '8 day streak',
                 completed: false,
@@ -143,6 +145,8 @@ class _GoalPageState extends State<GoalPage> {
                 icon: Icons.groups,
                 themeColor: Colors.teal,
                 progress: 0.35,
+                secondProgress: 0.4,
+                secondLabel: 'Friend',
                 durationText: '21 days goal',
                 streakText: '3 day streak',
                 completed: false,
@@ -154,6 +158,8 @@ class _GoalPageState extends State<GoalPage> {
                 icon: Icons.group_work_outlined,
                 themeColor: Colors.orange,
                 progress: 0.8,
+                secondProgress: 0.72,
+                secondLabel: 'Friend',
                 durationText: '14 days goal',
                 streakText: '10 day streak',
                 completed: false,
@@ -174,6 +180,8 @@ class _GoalCard extends StatelessWidget {
   final IconData icon;
   final Color themeColor;
   final double progress; // 0.0 - 1.0
+  final double? secondProgress; // friend/other progress for mutual goals
+  final String secondLabel;
   final String durationText;
   final String streakText;
   final bool completed;
@@ -184,6 +192,8 @@ class _GoalCard extends StatelessWidget {
     required this.icon,
     required this.themeColor,
     required this.progress,
+    this.secondProgress,
+    this.secondLabel = 'Friend',
     required this.durationText,
     required this.streakText,
     required this.completed,
@@ -197,12 +207,17 @@ class _GoalCard extends StatelessWidget {
         final totalDays = _extractFirstInt(durationText) ?? 30;
         final completedApprox = (progress * totalDays).round();
         final streak = _extractFirstInt(streakText) ?? 0;
+        final isMutual = secondProgress != null || category.toLowerCase().contains('mutual');
+        final friendCompletedApprox = ((secondProgress ?? 0) * totalDays).round();
         final args = GoalDetailArgs(
           title: title,
           category: category,
           totalDays: totalDays,
           completed: completedApprox,
           currentStreak: streak,
+          isMutual: isMutual,
+          friendName: secondLabel,
+          friendCompleted: friendCompletedApprox,
         );
         if (context.mounted) {
           context.push(AppConstants.goalDetailRoute, extra: args);
@@ -269,27 +284,70 @@ class _GoalCard extends StatelessWidget {
 
             const SizedBox(height: 14),
 
-            // Progress section
-            Row(
-              children: [
-                const Text('Progress', style: TextStyle(color: Colors.black)),
-                const Spacer(),
-                Text(
-                  '${(progress * 100).round()}%',
-                  style: const TextStyle(color: Colors.black),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(themeColor),
+            // Progress section (single or dual bar)
+            if (secondProgress == null) ...[
+              Row(
+                children: [
+                  const Text('Progress', style: TextStyle(color: Colors.black)),
+                  const Spacer(),
+                  Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.black)),
+                ],
               ),
-            ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(themeColor),
+                ),
+              ),
+            ] else ...[
+              Row(
+                children: const [
+                  Text('Progress', style: TextStyle(color: Colors.black)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // You
+              Row(
+                children: [
+                  const Text('You', style: TextStyle(color: Colors.black)),
+                  const Spacer(),
+                  Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.black)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(themeColor),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Friend/Other
+              Row(
+                children: [
+                  Text(secondLabel, style: const TextStyle(color: Colors.black)),
+                  const Spacer(),
+                  Text('${((secondProgress ?? 0) * 100).round()}%', style: const TextStyle(color: Colors.black)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: secondProgress ?? 0,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 12),
 
