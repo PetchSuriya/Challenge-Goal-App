@@ -877,7 +877,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                 child: Text(
                                   friend,
                                   style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: Colors.black87,
                                   ),
                                 ),
                               ),
