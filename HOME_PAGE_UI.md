@@ -34,7 +34,8 @@ The Home page serves as the main navigation hub of the ChallengeGoals app, featu
 - **Size**: 160x50dp rectangle
 - **Style**: Gradient button (green.shade500 to green.shade700)
 - **Icon**: `Icons.people_outline` with white circular background
-- **Action**: Show "Coming Soon" dialog
+- **Action**: Navigate to FriendsHomePage with sample friend "Alex"
+- **Route**: `/friends/Alex?avatarUrl=assets/images/avatar.png`
 - **Layout**: Horizontal - icon + text
 
 #### Costume Button (Top-Right, Upper)

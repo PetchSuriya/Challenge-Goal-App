@@ -16,6 +16,13 @@ A complete Flutter application with clean architecture, featuring authentication
 - **Goal Button** for accessing user goals
 - **Clean Layout** with positioned buttons and centered avatar
 
+### Friends Feature
+- **Friends Home Screen** with dedicated layout for friend interactions
+- **Friend Avatar Display** using same transparent PNG style as home page
+- **Top Bar Navigation** with friend name and close button (returns to Home)
+- **Mutual Goal Button** for shared goal activities
+- **State Management** with FriendsController and FriendsState
+
 ### User Profile
 - **Profile Display** with user information
 - **Profile Editing** with form validation
@@ -42,6 +49,11 @@ lib/
 │   └── theme/
 │       └── app_theme.dart        # App theme configuration
 ├── features/                      # Feature-based modules
+│   ├── friends/                   # Friends feature
+│   │   ├── controller/
+│   │   │   └── friends_controller.dart
+│   │   └── view/
+│   │       └── friends_home_page.dart
 │   ├── home/                      # Home page feature
 │   │   ├── controller/
 │   │   │   └── home_controller.dart
@@ -191,10 +203,16 @@ The app expects the following API endpoints:
 ### Home Page Navigation
 1. **Avatar Display** → Shows 400x400dp PNG avatar centered on screen
 2. **Profile Button** → Navigate to user profile management
-3. **Friends Button** → Access friends and social features (coming soon)
+3. **Friends Button** → Navigate to Friends Home screen with sample friend data
 4. **Costume Button** → Customize avatar appearance (coming soon)
 5. **Premium Button** → Access premium features (coming soon)
 6. **Goals Button** → Set and track personal goals (coming soon)
+
+### Friends Page Navigation
+1. **Friend Avatar Display** → Shows 400x400dp transparent PNG avatar (same style as home)
+2. **Top Bar** → Friend's name display with close button navigation
+3. **Close Button (X)** → Always returns to Home page using route-based navigation
+4. **Mutual Goal Button** → Access shared goals with friend (coming soon)
 
 ### Profile Management
 1. **View Profile** → Display user information

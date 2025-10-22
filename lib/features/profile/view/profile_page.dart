@@ -1083,7 +1083,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             SizedBox(height: 8),
             Text(
               'Please check your email and follow the instructions to reset your password.',
-              style: const TextStyle(color: Colors.black87), // เปลี่ยนเป็น Colors.black87 เพื่อให้อ่านง่าย
+              style: TextStyle(color: Colors.black87), // เปลี่ยนเป็น Colors.black87 เพื่อให้อ่านง่าย
             ),
           ],
         ),

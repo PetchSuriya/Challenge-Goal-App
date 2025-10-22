@@ -4,6 +4,7 @@ import '../features/login/view/login_page.dart';
 import '../features/profile/view/profile_page.dart';
 import '../features/profile/view/reset_password_page.dart';
 import '../features/home/view/home_page.dart';
+import '../features/friends/view/friends_home_page.dart';
 import '../services/auth_service.dart';
 import '../core/constants/app_constants.dart';
 
@@ -86,6 +87,22 @@ class AppRoutes {
         path: AppConstants.homeRoute,
         name: 'home',
         builder: (context, state) => const HomePage(),
+      ),
+
+      /// หน้า Friends Home - แสดงโปรไฟล์เพื่อน
+      /// Path: '/friends/:friendName'
+      /// Access: Protected (ต้อง login ก่อน)
+      GoRoute(
+        path: '/friends/:friendName',
+        name: 'friends-home',
+        builder: (context, state) {
+          final friendName = state.pathParameters['friendName'] ?? 'Friend';
+          final friendAvatarUrl = state.uri.queryParameters['avatarUrl'];
+          return FriendsHomePage(
+            friendName: friendName,
+            friendAvatarUrl: friendAvatarUrl,
+          );
+        },
       ),
     ],
     // === Error Handling ===

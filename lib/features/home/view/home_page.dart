@@ -174,8 +174,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Navigate to friends page
-          _showComingSoonDialog(context, 'Friends');
+          // Navigate to friends page with a sample friend
+          context.go('/friends/Alex?avatarUrl=assets/images/avatar.png');
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
