@@ -251,14 +251,16 @@ class _GoalFormPageState extends State<GoalFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image Picker Section
+                      // Image Picker and Goal Title in same row
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Image Picker
                           GestureDetector(
                             onTap: _pickImage,
                             child: Container(
-                              width: 100,
-                              height: 100,
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(16),
@@ -295,7 +297,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
                           ),
                           const SizedBox(width: 16),
                           
-                          // Goal Title Field
+                          // Goal Title Field (Right side of image)
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,9 +356,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                         ],
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
-                      // Duration Section with Calendar
+                      // Duration Section with Calendar (Below the image and title)
                       const Text(
                         'Duration (days)',
                         style: TextStyle(
