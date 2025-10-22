@@ -418,41 +418,15 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                           ),
                                         ),
                                         validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter duration';
-                                }
-                                if (int.tryParse(value) == null) {
-                                  return 'Please enter a valid number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          ElevatedButton.icon(
-                            onPressed: _selectDateRange,
-                            icon: const Icon(Icons.date_range, size: 20),
-                            label: Text(
-                              _selectedDateRange == null
-                                  ? 'Select Range'
-                                  : '${_selectedDateRange!.start.day}/${_selectedDateRange!.start.month} - ${_selectedDateRange!.end.day}/${_selectedDateRange!.end.month}',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purple.shade50,
-                              foregroundColor: Colors.purple,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                                    
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter duration';
+                                          }
+                                          if (int.tryParse(value) == null) {
+                                            return 'Please enter a valid number';
+                                          }
+                                          return null;
+                                        },
+                                      ),
                                     ),
                                     
                                     const SizedBox(width: 8),
