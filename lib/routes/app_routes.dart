@@ -5,6 +5,7 @@ import '../features/profile/view/profile_page.dart';
 import '../features/profile/view/reset_password_page.dart';
 import '../features/dashboard/view/dashboard_page.dart';
 import '../features/goal/view/goal_page.dart';
+import '../features/goal/view/goal_detail_page.dart';
 import '../services/auth_service.dart';
 import '../core/constants/app_constants.dart';
 
@@ -87,6 +88,18 @@ class AppRoutes {
         path: AppConstants.goalRoute,
         name: 'goals',
         builder: (context, state) => const GoalPage(),
+      ),
+
+      /// หน้า Goal Detail - รายละเอียดของเป้าหมาย
+      /// Path: '/goals/detail'
+      /// Access: Protected (ต้อง login ก่อน)
+      GoRoute(
+        path: AppConstants.goalDetailRoute,
+        name: 'goal-detail',
+        builder: (context, state) {
+          final extra = state.extra;
+          return GoalDetailPage(args: extra is GoalDetailArgs ? extra : null);
+        },
       ),
 
       /// หน้า Reset Password - รีเซ็ตรหัสผ่าน

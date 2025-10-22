@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
+import 'goal_detail_page.dart';
 
 /// GoalPage - Redesigned to match login style with custom header, streak card, and goal list
 class GoalPage extends StatefulWidget {
@@ -19,22 +22,32 @@ class _GoalPageState extends State<GoalPage> {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 1,
-        leadingWidth: 120,
+        leadingWidth: 220,
         leading: Padding(
           padding: const EdgeInsets.only(left: 8),
-          child: TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _showMutual = !_showMutual;
-              });
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            icon: Icon(_showMutual ? Icons.person_outline : Icons.people_alt_outlined),
-            label: Text(_showMutual ? 'Personal' : 'Friends'),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go(AppConstants.dashboardRoute),
+              ),
+              const SizedBox(width: 4),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _showMutual = !_showMutual;
+                  });
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black87,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: Icon(_showMutual ? Icons.person_outline : Icons.people_alt_outlined),
+                label: Text(_showMutual ? 'Personal' : 'Friends'),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -67,12 +80,12 @@ class _GoalPageState extends State<GoalPage> {
               children: [
                 Text(
                   _showMutual ? 'Mutual Goals' : 'Your Goals',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
                 ),
                 const Spacer(),
                 Text(
                   _showMutual ? '3 active' : '5 active',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  style: const TextStyle(color: Colors.black, fontSize: 14),
                 ),
               ],
             ),
@@ -178,7 +191,24 @@ class _GoalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () {
+        final totalDays = _extractFirstInt(durationText) ?? 30;
+        final completedApprox = (progress * totalDays).round();
+        final streak = _extractFirstInt(streakText) ?? 0;
+        final args = GoalDetailArgs(
+          title: title,
+          category: category,
+          totalDays: totalDays,
+          completed: completedApprox,
+          currentStreak: streak,
+        );
+        if (context.mounted) {
+          context.push(AppConstants.goalDetailRoute, extra: args);
+        }
+      },
+      child: Card(
       elevation: 2.5,
       color: Colors.white,
       surfaceTintColor: Colors.white,
@@ -207,12 +237,16 @@ class _GoalCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         category,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: const TextStyle(fontSize: 12, color: Colors.black),
                       ),
                     ],
                   ),
@@ -238,9 +272,12 @@ class _GoalCard extends StatelessWidget {
             // Progress section
             Row(
               children: [
-                const Text('Progress'),
+                const Text('Progress', style: TextStyle(color: Colors.black)),
                 const Spacer(),
-                Text('${(progress * 100).round()}%'),
+                Text(
+                  '${(progress * 100).round()}%',
+                  style: const TextStyle(color: Colors.black),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -265,7 +302,7 @@ class _GoalCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       durationText,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style: const TextStyle(color: Colors.black, fontSize: 12),
                     ),
                   ],
                 ),
@@ -276,7 +313,7 @@ class _GoalCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       streakText,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      style: const TextStyle(color: Colors.black, fontSize: 12),
                     ),
                   ],
                 ),
@@ -285,8 +322,17 @@ class _GoalCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
+}
+
+int? _extractFirstInt(String text) {
+  final match = RegExp(r"(\d+)").firstMatch(text);
+  if (match != null) {
+    return int.tryParse(match.group(1)!);
+  }
+  return null;
 }
 
 class _CurrentStreakCard extends StatelessWidget {
@@ -343,7 +389,10 @@ class _CurrentStreakCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text('${(percent * 100).round()}% Complete', style: TextStyle(color: Colors.grey.shade700)),
+            Text(
+              '${(percent * 100).round()}% Complete',
+              style: const TextStyle(color: Colors.black),
+            ),
           ],
         ),
       ),

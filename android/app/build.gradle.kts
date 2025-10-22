@@ -11,11 +11,13 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Keep Java language level at 11 (default for current setup)
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
+        // Match Kotlin JVM target with Java 11
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
@@ -38,6 +40,7 @@ android {
         }
     }
 }
+
 
 flutter {
     source = "../.."
