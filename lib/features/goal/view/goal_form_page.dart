@@ -60,7 +60,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF7B68EE), // สีม่วงหลัก - วันที่เลือก
+              primary: Color(0xFFDA70D6), // สีชมพู - วงกลมวันที่เริ่มต้น-สิ้นสุด
               onPrimary: Colors.white, // ตัวหนังสือบนวันที่เลือก
               secondary: Color(0xFFDA70D6), // สีชมพู
               onSecondary: Colors.white,
@@ -68,8 +68,8 @@ class _GoalFormPageState extends State<GoalFormPage> {
               onSurface: Colors.black87, // ตัวหนังสือทั่วไป
               background: Colors.white, // พื้นหลังโดยรวม
               onBackground: Colors.black87,
-              primaryContainer: Color(0xFFE6D9FF), // พื้นหลังช่วงวันที่ที่เลือก (สีม่วงอ่อน)
-              onPrimaryContainer: Color(0xFF4B0082), // ตัวหนังสือในช่วงที่เลือก
+              primaryContainer: Color(0xFFFFC0E5), // เฟดสีชมพูอ่อนระหว่างวัน
+              onPrimaryContainer: Color(0xFFD6006B), // ตัวหนังสือในช่วงที่เลือก (ชมพูเข้ม)
               surfaceVariant: Colors.white, // พื้นหลังส่วนอื่นๆ
               onSurfaceVariant: Colors.black87,
             ),
