@@ -58,20 +58,33 @@ class _GoalFormPageState extends State<GoalFormPage> {
       initialDateRange: _selectedDateRange,
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFF7B68EE), // สีม่วงหลัก
-              onPrimary: Colors.white, // ตัวหนังสือบนสีม่วง
-              secondary: const Color(0xFFDA70D6), // สีชมพู
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF7B68EE), // สีม่วงหลัก - วันที่เลือก
+              onPrimary: Colors.white, // ตัวหนังสือบนวันที่เลือก
+              secondary: Color(0xFFDA70D6), // สีชมพู
               onSecondary: Colors.white,
               surface: Colors.white, // พื้นหลังปฏิทิน
               onSurface: Colors.black87, // ตัวหนังสือทั่วไป
-              primaryContainer: const Color(0xFFE6D9FF), // พื้นหลังช่วงวันที่ที่เลือก (สีม่วงอ่อน)
-              onPrimaryContainer: const Color(0xFF4B0082), // ตัวหนังสือในช่วงที่เลือก
+              background: Colors.white, // พื้นหลังโดยรวม
+              onBackground: Colors.black87,
+              primaryContainer: Color(0xFFE6D9FF), // พื้นหลังช่วงวันที่ที่เลือก (สีม่วงอ่อน)
+              onPrimaryContainer: Color(0xFF4B0082), // ตัวหนังสือในช่วงที่เลือก
+              surfaceVariant: Colors.white, // พื้นหลังส่วนอื่นๆ
+              onSurfaceVariant: Colors.black87,
+            ),
+            scaffoldBackgroundColor: Colors.white, // พื้นหลัง scaffold
+            canvasColor: Colors.white, // พื้นหลัง canvas
+            cardColor: Colors.white, // พื้นหลัง card
+            textTheme: const TextTheme(
+              headlineMedium: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+              titleMedium: TextStyle(color: Colors.black87),
+              bodyMedium: TextStyle(color: Colors.black87),
+              labelLarge: TextStyle(color: Colors.black87),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF7B68EE), // สีปุ่ม Cancel/OK
+                foregroundColor: const Color(0xFF7B68EE), // สีปุ่ม Cancel/SAVE
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -79,12 +92,19 @@ class _GoalFormPageState extends State<GoalFormPage> {
               ),
             ),
             dialogBackgroundColor: Colors.white,
-            dialogTheme: DialogThemeData(
+            dialogTheme: const DialogThemeData(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
+              elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.all(Radius.circular(20)),
               ),
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black87,
+              elevation: 0,
+              iconTheme: IconThemeData(color: Colors.black87),
             ),
           ),
           child: child!,
