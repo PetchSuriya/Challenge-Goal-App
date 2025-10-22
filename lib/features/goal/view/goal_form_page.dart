@@ -378,8 +378,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                         color: Colors.black54,
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 8),
                                     Expanded(
+                                      flex: 2,
                                       child: TextFormField(
                                         controller: _durationController,
                                         keyboardType: TextInputType.number,
@@ -394,6 +395,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                           hintStyle: TextStyle(
                                             color: Colors.grey.shade400,
                                             fontWeight: FontWeight.normal,
+                                            fontSize: 12,
                                           ),
                                           suffixText: _durationController.text.isNotEmpty ? 'days' : null,
                                           filled: true,
@@ -411,8 +413,8 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                             borderSide: const BorderSide(color: Colors.purple, width: 2),
                                           ),
                                           contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 12,
+                                            horizontal: 12,
+                                            vertical: 10,
                                           ),
                                         ),
                                         validator: (value) {
@@ -451,25 +453,31 @@ class _GoalFormPageState extends State<GoalFormPage> {
                         ],
                       ),
                                     
-                                    const SizedBox(width: 12),
-                                    ElevatedButton.icon(
-                                      onPressed: _selectDateRange,
-                                      icon: const Icon(Icons.date_range, size: 20),
-                                      label: Text(
-                                        _selectedDateRange == null
-                                            ? 'Select Range'
-                                            : '${_selectedDateRange!.start.day}/${_selectedDateRange!.start.month} - ${_selectedDateRange!.end.day}/${_selectedDateRange!.end.month}',
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.purple.shade50,
-                                        foregroundColor: Colors.purple,
-                                        elevation: 0,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 12,
+                                    ),
+                                    
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 1,
+                                      child: ElevatedButton.icon(
+                                        onPressed: _selectDateRange,
+                                        icon: const Icon(Icons.date_range, size: 16),
+                                        label: Text(
+                                          _selectedDateRange == null
+                                              ? 'Select'
+                                              : '${_selectedDateRange!.start.day}/${_selectedDateRange!.start.month}',
+                                          style: const TextStyle(fontSize: 12),
                                         ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.purple.shade50,
+                                          foregroundColor: Colors.purple,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 10,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
                                         ),
                                       ),
                                     ),
