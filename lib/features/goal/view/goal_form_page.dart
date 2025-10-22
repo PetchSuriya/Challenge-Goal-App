@@ -13,11 +13,11 @@ class GoalFormPage extends StatefulWidget {
 class _GoalFormPageState extends State<GoalFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
-  final _durationController = TextEditingController(text: '30');
+  final _durationController = TextEditingController();
   
   File? _selectedImage;
-  String _selectedCategory = 'Fitness';
-  String _selectedGoalType = 'Personal';
+  String? _selectedCategory; // เปลี่ยนเป็น nullable
+  String? _selectedGoalType; // เปลี่ยนเป็น nullable
   DateTimeRange? _selectedDateRange;
   List<String> _selectedFriends = [];
   
@@ -134,6 +134,37 @@ class _GoalFormPageState extends State<GoalFormPage> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // ตรวจสอบว่าเลือก Category และ Goal Type แล้วหรือยัง
+      if (_selectedCategory == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a category'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      if (_selectedGoalType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a goal type'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      if (_durationController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select date range'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
       // TODO: ส่งข้อมูลไปบันทึก
       Navigator.pop(context, {
         'title': _titleController.text,
@@ -280,9 +311,17 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                 const SizedBox(height: 8),
                                 TextFormField(
                                   controller: _titleController,
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                   decoration: InputDecoration(
                                     hintText: 'e.g. Read 30 minutes daily',
-                                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                      fontWeight: FontWeight.normal,
+                                    ),
                                     filled: true,
                                     fillColor: Colors.grey.shade50,
                                     border: OutlineInputBorder(
@@ -346,8 +385,19 @@ class _GoalFormPageState extends State<GoalFormPage> {
                             child: TextFormField(
                               controller: _durationController,
                               keyboardType: TextInputType.number,
+                              readOnly: true, // ทำให้พิมพ์เองไม่ได้ ต้องเลือกจากปฏิทิน
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
                               decoration: InputDecoration(
-                                suffixText: 'days',
+                                hintText: 'Select date range',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade400,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                suffixText: _durationController.text.isNotEmpty ? 'days' : null,
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                                 border: OutlineInputBorder(
