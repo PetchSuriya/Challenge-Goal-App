@@ -535,7 +535,12 @@ class _GoalFormPageState extends State<GoalFormPage> {
                           return GestureDetector(
                             onTap: () {
                               setState(() {
-                                _selectedCategory = category['name'];
+                                // Toggle: ถ้าเลือกอยู่แล้วให้ยกเลิก, ถ้ายังไม่เลือกให้เลือก
+                                if (_selectedCategory == category['name']) {
+                                  _selectedCategory = null; // ยกเลิกการเลือก
+                                } else {
+                                  _selectedCategory = category['name']; // เลือกใหม่
+                                }
                               });
                             },
                             child: Container(
@@ -612,8 +617,13 @@ class _GoalFormPageState extends State<GoalFormPage> {
                               isSelected: _selectedGoalType == 'Personal',
                               onTap: () {
                                 setState(() {
-                                  _selectedGoalType = 'Personal';
-                                  _selectedFriends.clear();
+                                  // Toggle: ถ้าเลือก Personal อยู่แล้วให้ยกเลิก
+                                  if (_selectedGoalType == 'Personal') {
+                                    _selectedGoalType = null; // ยกเลิกการเลือก
+                                  } else {
+                                    _selectedGoalType = 'Personal'; // เลือก Personal
+                                    _selectedFriends.clear(); // ล้างรายชื่อเพื่อน
+                                  }
                                 });
                               },
                             ),
@@ -627,7 +637,13 @@ class _GoalFormPageState extends State<GoalFormPage> {
                               isSelected: _selectedGoalType == 'Mutual',
                               onTap: () {
                                 setState(() {
-                                  _selectedGoalType = 'Mutual';
+                                  // Toggle: ถ้าเลือก Mutual อยู่แล้วให้ยกเลิก
+                                  if (_selectedGoalType == 'Mutual') {
+                                    _selectedGoalType = null; // ยกเลิกการเลือก
+                                    _selectedFriends.clear(); // ล้างรายชื่อเพื่อน
+                                  } else {
+                                    _selectedGoalType = 'Mutual'; // เลือก Mutual
+                                  }
                                 });
                               },
                             ),
