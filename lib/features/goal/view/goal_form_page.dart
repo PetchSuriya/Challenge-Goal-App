@@ -251,11 +251,11 @@ class _GoalFormPageState extends State<GoalFormPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Image Picker and Goal Title in same row
+                      // Image, Goal Title, and Duration in same row
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Image Picker
+                          // Image Picker (Left side)
                           GestureDetector(
                             onTap: _pickImage,
                             child: Container(
@@ -297,11 +297,12 @@ class _GoalFormPageState extends State<GoalFormPage> {
                           ),
                           const SizedBox(width: 16),
                           
-                          // Goal Title Field (Right side of image)
+                          // Goal Title and Duration (Right side)
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Goal Title
                                 const Text(
                                   'Goal Title',
                                   style: TextStyle(
@@ -350,76 +351,71 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                     return null;
                                   },
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Duration Section with Calendar (Below the image and title)
-                      const Text(
-                        'Duration (days)',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.calendar_today,
-                              size: 20,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _durationController,
-                              keyboardType: TextInputType.number,
-                              readOnly: true, // ทำให้พิมพ์เองไม่ได้ ต้องเลือกจากปฏิทิน
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Select date range',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey.shade400,
-                                  fontWeight: FontWeight.normal,
+                                
+                                const SizedBox(height: 12),
+                                
+                                // Duration (Below Goal Title, same column)
+                                const Text(
+                                  'Duration (days)',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
-                                suffixText: _durationController.text.isNotEmpty ? 'days' : null,
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Colors.purple, width: 2),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                              ),
-                              validator: (value) {
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.calendar_today,
+                                        size: 20,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _durationController,
+                                        keyboardType: TextInputType.number,
+                                        readOnly: true,
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: 'Select date range',
+                                          hintStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                            fontWeight: FontWeight.normal,
+                                          ),
+                                          suffixText: _durationController.text.isNotEmpty ? 'days' : null,
+                                          filled: true,
+                                          fillColor: Colors.grey.shade50,
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.grey.shade300),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.grey.shade300),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: Colors.purple, width: 2),
+                                          ),
+                                          contentPadding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                        validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter duration';
                                 }
@@ -450,6 +446,36 @@ class _GoalFormPageState extends State<GoalFormPage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                            ),
+                          ),
+                        ],
+                      ),
+                                    
+                                    const SizedBox(width: 12),
+                                    ElevatedButton.icon(
+                                      onPressed: _selectDateRange,
+                                      icon: const Icon(Icons.date_range, size: 20),
+                                      label: Text(
+                                        _selectedDateRange == null
+                                            ? 'Select Range'
+                                            : '${_selectedDateRange!.start.day}/${_selectedDateRange!.start.month} - ${_selectedDateRange!.end.day}/${_selectedDateRange!.end.month}',
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.purple.shade50,
+                                        foregroundColor: Colors.purple,
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ],
