@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../features/login/view/login_page.dart';
 import '../features/profile/view/profile_page.dart';
 import '../features/profile/view/reset_password_page.dart';
+import '../features/home/view/home_page.dart';
 import '../services/auth_service.dart';
 import '../core/constants/app_constants.dart';
 
@@ -77,6 +78,15 @@ class AppRoutes {
         name: 'reset-password',
         builder: (context, state) => const ResetPasswordPage(),
       ),
+
+      /// หน้า Home - หน้าหลักของแอป
+      /// Path: '/home'
+      /// Access: Protected (ต้อง login ก่อน)
+      GoRoute(
+        path: AppConstants.homeRoute,
+        name: 'home',
+        builder: (context, state) => const HomePage(),
+      ),
     ],
     // === Error Handling ===
     
@@ -124,7 +134,7 @@ class AppRoutes {
                 // ตรวจสอบสถานะการ login และนำไปหน้าที่เหมาะสม
                 final isLoggedIn = await _authService.isLoggedIn();
                 final destination = isLoggedIn 
-                    ? AppConstants.profileRoute  // ถ้า login แล้วไป Profile
+                    ? AppConstants.homeRoute     // ถ้า login แล้วไป Home
                     : AppConstants.loginRoute;   // ถ้ายังไม่ได้ login ไป Login
                 if (context.mounted) {
                   context.go(destination);
@@ -144,4 +154,5 @@ extension AppRouterExtension on GoRouter {
   void goToLogin() => go(AppConstants.loginRoute);
   void goToProfile() => go(AppConstants.profileRoute);
   void goToResetPassword() => go(AppConstants.resetPasswordRoute);
+  void goToHome() => go(AppConstants.homeRoute);
 }

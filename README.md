@@ -10,6 +10,12 @@ A complete Flutter application with clean architecture, featuring authentication
 - **Password Reset** via email
 - **Automatic Login State** persistence
 
+### Home Page
+- **Avatar Display** with 400x400dp PNG image support
+- **Navigation Buttons** for Profile, Friends, Costume, and Premium features
+- **Goal Button** for accessing user goals
+- **Clean Layout** with positioned buttons and centered avatar
+
 ### User Profile
 - **Profile Display** with user information
 - **Profile Editing** with form validation
@@ -36,6 +42,11 @@ lib/
 │   └── theme/
 │       └── app_theme.dart        # App theme configuration
 ├── features/                      # Feature-based modules
+│   ├── home/                      # Home page feature
+│   │   ├── controller/
+│   │   │   └── home_controller.dart
+│   │   └── view/
+│   │       └── home_page.dart
 │   ├── login/                     # Login feature
 │   │   ├── controller/
 │   │   │   └── login_controller.dart
@@ -174,8 +185,16 @@ The app expects the following API endpoints:
 ### Authentication Flow
 1. **App Launch** → Check if user is logged in
 2. **Not Logged In** → Show Login Page
-3. **Login Success** → Save JWT token → Navigate to Profile
-4. **Already Logged In** → Navigate directly to Profile
+3. **Login Success** → Save JWT token → Navigate to Home Page
+4. **Already Logged In** → Navigate directly to Home Page
+
+### Home Page Navigation
+1. **Avatar Display** → Shows 400x400dp PNG avatar centered on screen
+2. **Profile Button** → Navigate to user profile management
+3. **Friends Button** → Access friends and social features (coming soon)
+4. **Costume Button** → Customize avatar appearance (coming soon)
+5. **Premium Button** → Access premium features (coming soon)
+6. **Goals Button** → Set and track personal goals (coming soon)
 
 ### Profile Management
 1. **View Profile** → Display user information
