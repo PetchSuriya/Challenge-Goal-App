@@ -60,10 +60,31 @@ class _GoalFormPageState extends State<GoalFormPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Colors.purple,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
+              primary: const Color(0xFF7B68EE), // สีม่วงหลัก
+              onPrimary: Colors.white, // ตัวหนังสือบนสีม่วง
+              secondary: const Color(0xFFDA70D6), // สีชมพู
+              onSecondary: Colors.white,
+              surface: Colors.white, // พื้นหลังปฏิทิน
+              onSurface: Colors.black87, // ตัวหนังสือทั่วไป
+              primaryContainer: const Color(0xFFE6D9FF), // พื้นหลังช่วงวันที่ที่เลือก (สีม่วงอ่อน)
+              onPrimaryContainer: const Color(0xFF4B0082), // ตัวหนังสือในช่วงที่เลือก
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF7B68EE), // สีปุ่ม Cancel/OK
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            dialogBackgroundColor: Colors.white,
+            dialogTheme: DialogTheme(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
           ),
           child: child!,
