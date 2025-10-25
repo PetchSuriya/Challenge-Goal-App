@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import 'goal_detail_page.dart';
+import 'goal_form_page.dart';
 
 /// GoalPage - Redesigned to match login style with custom header, streak card, and goal list
 class GoalPage extends StatefulWidget {
@@ -56,7 +57,26 @@ class _GoalPageState extends State<GoalPage> {
             child: _GradientActionButton(
               icon: Icons.add,
               label: 'Add Goal',
-              onPressed: () {},
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GoalFormPage(),
+                  ),
+                );
+                
+                if (result != null) {
+                  // TODO: เพิ่ม goal ใหม่ลงในรายการ
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Goal added successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ),
         ],
