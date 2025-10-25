@@ -1,3 +1,7 @@
+# LOGIN PASSWORD
+
+admin@bento.app / Bento2025!
+
 # Bento - Flutter Authentication App
 
 A complete Flutter application with clean architecture, featuring authentication and user profile management. Built with modern Flutter best practices and scalable folder structure.
