@@ -39,12 +39,12 @@ class FriendsController extends StateNotifier<FriendsState> {
     String? friendAvatarUrl,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       // TODO: Load friend data from API or local storage
       // Simulate loading
       await Future.delayed(const Duration(milliseconds: 300));
-      
+
       state = state.copyWith(
         isLoading: false,
         friendName: friendName,
@@ -70,6 +70,7 @@ class FriendsController extends StateNotifier<FriendsState> {
 }
 
 /// Provider for FriendsController
-final friendsControllerProvider = StateNotifierProvider<FriendsController, FriendsState>((ref) {
-  return FriendsController();
-});
+final friendsControllerProvider =
+    StateNotifierProvider<FriendsController, FriendsState>((ref) {
+      return FriendsController();
+    });

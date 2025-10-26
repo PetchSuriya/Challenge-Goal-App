@@ -36,19 +36,26 @@ class _FriendPageState extends State<FriendPage> {
   }
 
   void _initializeFriends() {
-    _friends = List.generate(6, (i) => Friend(
-      id: 'friend_${i + 1}',
-      name: 'Friend ${i + 1}',
-      status: i % 3 == 0 ? 'Active' : i % 3 == 1 ? 'Away' : 'Offline',
-      goals: (i + 1) * 2,
-    ));
+    _friends = List.generate(
+      6,
+      (i) => Friend(
+        id: 'friend_${i + 1}',
+        name: 'Friend ${i + 1}',
+        status: i % 3 == 0
+            ? 'Active'
+            : i % 3 == 1
+            ? 'Away'
+            : 'Offline',
+        goals: (i + 1) * 2,
+      ),
+    );
   }
 
   void _deleteFriend(String friendId) {
     setState(() {
       _friends.removeWhere((friend) => friend.id == friendId);
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Friend removed successfully'),
@@ -64,7 +71,9 @@ class _FriendPageState extends State<FriendPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Friend'),
-          content: Text('Are you sure you want to remove $friendName from your friends list?'),
+          content: Text(
+            'Are you sure you want to remove $friendName from your friends list?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -75,9 +84,7 @@ class _FriendPageState extends State<FriendPage> {
                 Navigator.of(context).pop();
                 _deleteFriend(friendId);
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Delete'),
             ),
           ],
@@ -85,6 +92,7 @@ class _FriendPageState extends State<FriendPage> {
       },
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,7 +119,9 @@ class _FriendPageState extends State<FriendPage> {
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.black87,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 icon: const Icon(Icons.person_add_outlined),
                 label: const Text('Add Friend'),
@@ -197,11 +207,7 @@ class _FriendPageState extends State<FriendPage> {
         ),
         child: Column(
           children: [
-            Icon(
-              Icons.people_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.people_outline, size: 64, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
               'No friends yet',
@@ -214,9 +220,7 @@ class _FriendPageState extends State<FriendPage> {
             const SizedBox(height: 8),
             Text(
               'Add some friends to get started!',
-              style: TextStyle(
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(color: Colors.grey.shade500),
             ),
           ],
         ),
@@ -233,7 +237,9 @@ class _FriendPageState extends State<FriendPage> {
         return GestureDetector(
           onTap: () {
             // Navigate to friend's profile page
-            context.go('/friends/${friend.name}?avatarUrl=assets/images/avatar.png');
+            context.go(
+              '/friends/${friend.name}?avatarUrl=assets/images/avatar.png',
+            );
           },
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -249,81 +255,85 @@ class _FriendPageState extends State<FriendPage> {
               ],
             ),
             child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.blue.shade100,
-                child: Text(
-                  friend.name[0],
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.bold,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.blue.shade100,
+                  child: Text(
+                    friend.name[0],
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        friend.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        '${friend.goals} goals',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
                   children: [
-                    Text(
-                      friend.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: friend.status == 'Active'
+                            ? Colors.green.shade100
+                            : friend.status == 'Away'
+                            ? Colors.orange.shade100
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        friend.status,
+                        style: TextStyle(
+                          color: friend.status == 'Active'
+                              ? Colors.green.shade700
+                              : friend.status == 'Away'
+                              ? Colors.orange.shade700
+                              : Colors.grey.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                    Text(
-                      '${friend.goals} goals',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 14,
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () =>
+                          _showDeleteConfirmation(friend.name, friend.id),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Colors.red.shade400,
+                        size: 20,
+                      ),
+                      tooltip: 'Delete friend',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.shade50,
+                        padding: const EdgeInsets.all(8),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: friend.status == 'Active' 
-                          ? Colors.green.shade100 
-                          : friend.status == 'Away'
-                              ? Colors.orange.shade100
-                              : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      friend.status,
-                      style: TextStyle(
-                        color: friend.status == 'Active' 
-                            ? Colors.green.shade700 
-                            : friend.status == 'Away'
-                                ? Colors.orange.shade700
-                                : Colors.grey.shade700,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => _showDeleteConfirmation(friend.name, friend.id),
-                    icon: Icon(
-                      Icons.delete_outline,
-                      color: Colors.red.shade400,
-                      size: 20,
-                    ),
-                    tooltip: 'Delete friend',
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.shade50,
-                      padding: const EdgeInsets.all(8),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
             ),
           ),
         );
@@ -381,10 +391,7 @@ class _FriendsSummaryCard extends StatelessWidget {
               const Expanded(
                 child: Text(
                   'Friends Overview',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -503,7 +510,9 @@ class _GradientActionButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

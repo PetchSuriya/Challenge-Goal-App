@@ -14,13 +14,13 @@ class _GoalFormPageState extends State<GoalFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _durationController = TextEditingController();
-  
+
   File? _selectedImage;
   String? _selectedCategory; // เปลี่ยนเป็น nullable
   String? _selectedGoalType; // เปลี่ยนเป็น nullable
   DateTimeRange? _selectedDateRange;
   List<String> _selectedFriends = [];
-  
+
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Fitness', 'icon': Icons.fitness_center},
     {'name': 'Learning', 'icon': Icons.school},
@@ -42,7 +42,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
       maxWidth: 512,
       maxHeight: 512,
     );
-    
+
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
@@ -60,7 +60,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFFDA70D6), // สีชมพู - วงกลมวันที่เริ่มต้น-สิ้นสุด
+              primary: Color(
+                0xFFDA70D6,
+              ), // สีชมพู - วงกลมวันที่เริ่มต้น-สิ้นสุด
               onPrimary: Colors.white, // ตัวหนังสือบนวันที่เลือก
               secondary: Color(0xFFDA70D6), // สีชมพู
               onSecondary: Colors.white,
@@ -69,7 +71,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
               background: Colors.white, // พื้นหลังโดยรวม
               onBackground: Colors.black87,
               primaryContainer: Color(0xFFFFC0E5), // เฟดสีชมพูอ่อนระหว่างวัน
-              onPrimaryContainer: Color(0xFFD6006B), // ตัวหนังสือในช่วงที่เลือก (ชมพูเข้ม)
+              onPrimaryContainer: Color(
+                0xFFD6006B,
+              ), // ตัวหนังสือในช่วงที่เลือก (ชมพูเข้ม)
               surfaceVariant: Colors.white, // พื้นหลังส่วนอื่นๆ
               onSurfaceVariant: Colors.black87,
             ),
@@ -77,7 +81,10 @@ class _GoalFormPageState extends State<GoalFormPage> {
             canvasColor: Colors.white, // พื้นหลัง canvas
             cardColor: Colors.white, // พื้นหลัง card
             textTheme: const TextTheme(
-              headlineMedium: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+              headlineMedium: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+              ),
               titleMedium: TextStyle(color: Colors.black87),
               bodyMedium: TextStyle(color: Colors.black87),
               labelLarge: TextStyle(color: Colors.black87),
@@ -111,7 +118,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
         _selectedDateRange = picked;
@@ -134,11 +141,11 @@ class _GoalFormPageState extends State<GoalFormPage> {
       {'name': 'Chris Lee', 'avatar': '👤'},
       {'name': 'Lisa Anderson', 'avatar': '👤'},
     ];
-    
+
     final TextEditingController searchController = TextEditingController();
     List<String> tempSelectedFriends = List.from(_selectedFriends);
     List<Map<String, dynamic>> filteredFriends = List.from(availableFriends);
-    
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -149,14 +156,16 @@ class _GoalFormPageState extends State<GoalFormPage> {
                 filteredFriends = List.from(availableFriends);
               } else {
                 filteredFriends = availableFriends
-                    .where((friend) => friend['name']
-                        .toLowerCase()
-                        .contains(query.toLowerCase()))
+                    .where(
+                      (friend) => friend['name'].toLowerCase().contains(
+                        query.toLowerCase(),
+                      ),
+                    )
                     .toList();
               }
             });
           }
-          
+
           return Dialog(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
@@ -181,7 +190,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Search Field
                   TextField(
                     controller: searchController,
@@ -192,7 +201,10 @@ class _GoalFormPageState extends State<GoalFormPage> {
                         color: Colors.grey.shade400,
                         fontSize: 13,
                       ),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey.shade400),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey.shade400,
+                      ),
                       filled: true,
                       fillColor: Colors.grey.shade50,
                       border: OutlineInputBorder(
@@ -205,7 +217,10 @@ class _GoalFormPageState extends State<GoalFormPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF7B68EE), width: 2),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF7B68EE),
+                          width: 2,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -214,7 +229,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Friends List
                   Flexible(
                     child: filteredFriends.isEmpty
@@ -238,10 +253,12 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                       Expanded(
                                         child: _FriendCheckboxItem(
                                           name: filteredFriends[index]['name'],
-                                          avatar: filteredFriends[index]['avatar'],
-                                          isSelected: tempSelectedFriends.contains(
-                                            filteredFriends[index]['name'],
-                                          ),
+                                          avatar:
+                                              filteredFriends[index]['avatar'],
+                                          isSelected: tempSelectedFriends
+                                              .contains(
+                                                filteredFriends[index]['name'],
+                                              ),
                                           onChanged: (selected) {
                                             setDialogState(() {
                                               if (selected) {
@@ -262,20 +279,28 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                       if (index + 1 < filteredFriends.length)
                                         Expanded(
                                           child: _FriendCheckboxItem(
-                                            name: filteredFriends[index + 1]['name'],
-                                            avatar: filteredFriends[index + 1]['avatar'],
-                                            isSelected: tempSelectedFriends.contains(
-                                              filteredFriends[index + 1]['name'],
-                                            ),
+                                            name:
+                                                filteredFriends[index +
+                                                    1]['name'],
+                                            avatar:
+                                                filteredFriends[index +
+                                                    1]['avatar'],
+                                            isSelected: tempSelectedFriends
+                                                .contains(
+                                                  filteredFriends[index +
+                                                      1]['name'],
+                                                ),
                                             onChanged: (selected) {
                                               setDialogState(() {
                                                 if (selected) {
                                                   tempSelectedFriends.add(
-                                                    filteredFriends[index + 1]['name'],
+                                                    filteredFriends[index +
+                                                        1]['name'],
                                                   );
                                                 } else {
                                                   tempSelectedFriends.remove(
-                                                    filteredFriends[index + 1]['name'],
+                                                    filteredFriends[index +
+                                                        1]['name'],
                                                   );
                                                 }
                                               });
@@ -292,9 +317,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                             },
                           ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Action Buttons
                   Row(
                     children: [
@@ -375,7 +400,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
         );
         return;
       }
-      
+
       if (_selectedGoalType == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -385,7 +410,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
         );
         return;
       }
-      
+
       if (_durationController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -395,7 +420,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
         );
         return;
       }
-      
+
       // TODO: ส่งข้อมูลไปบันทึก
       Navigator.pop(context, {
         'title': _titleController.text,
@@ -457,10 +482,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
                         SizedBox(height: 4),
                         Text(
                           'Create your next achievement',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 14),
                         ),
                       ],
                     ),
@@ -511,7 +533,8 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                       ),
                                     )
                                   : Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(
                                           Icons.image_outlined,
@@ -529,7 +552,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          
+
                           // Goal Title and Duration (Right side)
                           Expanded(
                             child: Column(
@@ -562,15 +585,22 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                     fillColor: Colors.grey.shade50,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.grey.shade300),
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade300,
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(color: Colors.purple, width: 2),
+                                      borderSide: const BorderSide(
+                                        color: Colors.purple,
+                                        width: 2,
+                                      ),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -584,9 +614,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                     return null;
                                   },
                                 ),
-                                
+
                                 const SizedBox(height: 12),
-                                
+
                                 // Duration (Below Goal Title, same column)
                                 const Text(
                                   'Duration (days)',
@@ -630,25 +660,44 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                             fontWeight: FontWeight.normal,
                                             fontSize: 12,
                                           ),
-                                          suffixText: _durationController.text.isNotEmpty ? 'days' : null,
+                                          suffixText:
+                                              _durationController
+                                                  .text
+                                                  .isNotEmpty
+                                              ? 'days'
+                                              : null,
                                           filled: true,
                                           fillColor: Colors.grey.shade50,
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide(color: Colors.grey.shade300),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade300,
+                                            ),
                                           ),
                                           enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: BorderSide(color: Colors.grey.shade300),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade300,
+                                            ),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                            borderSide: const BorderSide(color: Colors.purple, width: 2),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            borderSide: const BorderSide(
+                                              color: Colors.purple,
+                                              width: 2,
+                                            ),
                                           ),
-                                          contentPadding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 10,
-                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 10,
+                                              ),
                                         ),
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
@@ -661,13 +710,16 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                         },
                                       ),
                                     ),
-                                    
+
                                     const SizedBox(width: 8),
                                     Expanded(
                                       flex: 1,
                                       child: ElevatedButton.icon(
                                         onPressed: _selectDateRange,
-                                        icon: const Icon(Icons.date_range, size: 16),
+                                        icon: const Icon(
+                                          Icons.date_range,
+                                          size: 16,
+                                        ),
                                         label: Text(
                                           _selectedDateRange == null
                                               ? 'Select'
@@ -675,7 +727,8 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                           style: const TextStyle(fontSize: 12),
                                         ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.purple.shade50,
+                                          backgroundColor:
+                                              Colors.purple.shade50,
                                           foregroundColor: Colors.purple,
                                           elevation: 0,
                                           padding: const EdgeInsets.symmetric(
@@ -683,7 +736,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                             vertical: 10,
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -711,17 +766,19 @@ class _GoalFormPageState extends State<GoalFormPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 2.5,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 2.5,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
                         itemCount: _categories.length,
                         itemBuilder: (context, index) {
                           final category = _categories[index];
-                          final isSelected = _selectedCategory == category['name'];
-                          
+                          final isSelected =
+                              _selectedCategory == category['name'];
+
                           return GestureDetector(
                             onTap: () {
                               setState(() {
@@ -729,7 +786,8 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                 if (_selectedCategory == category['name']) {
                                   _selectedCategory = null; // ยกเลิกการเลือก
                                 } else {
-                                  _selectedCategory = category['name']; // เลือกใหม่
+                                  _selectedCategory =
+                                      category['name']; // เลือกใหม่
                                 }
                               });
                             },
@@ -746,7 +804,9 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Row(
                                 children: [
                                   Container(
@@ -811,8 +871,10 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                   if (_selectedGoalType == 'Personal') {
                                     _selectedGoalType = null; // ยกเลิกการเลือก
                                   } else {
-                                    _selectedGoalType = 'Personal'; // เลือก Personal
-                                    _selectedFriends.clear(); // ล้างรายชื่อเพื่อน
+                                    _selectedGoalType =
+                                        'Personal'; // เลือก Personal
+                                    _selectedFriends
+                                        .clear(); // ล้างรายชื่อเพื่อน
                                   }
                                 });
                               },
@@ -830,9 +892,11 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                   // Toggle: ถ้าเลือก Mutual อยู่แล้วให้ยกเลิก
                                   if (_selectedGoalType == 'Mutual') {
                                     _selectedGoalType = null; // ยกเลิกการเลือก
-                                    _selectedFriends.clear(); // ล้างรายชื่อเพื่อน
+                                    _selectedFriends
+                                        .clear(); // ล้างรายชื่อเพื่อน
                                   } else {
-                                    _selectedGoalType = 'Mutual'; // เลือก Mutual
+                                    _selectedGoalType =
+                                        'Mutual'; // เลือก Mutual
                                   }
                                 });
                               },
@@ -853,50 +917,52 @@ class _GoalFormPageState extends State<GoalFormPage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        
+
                         // Display selected friends
-                        ..._selectedFriends.map((friend) => Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.purple.shade100,
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.purple,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  friend,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: Colors.black87,
+                        ..._selectedFriends.map(
+                          (friend) => Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.purple.shade100,
+                                  child: Icon(
+                                    Icons.person,
+                                    color: Colors.purple,
+                                    size: 20,
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _selectedFriends.remove(friend);
-                                  });
-                                },
-                                icon: const Icon(Icons.close),
-                                color: Colors.grey,
-                                iconSize: 20,
-                              ),
-                            ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    friend,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedFriends.remove(friend);
+                                    });
+                                  },
+                                  icon: const Icon(Icons.close),
+                                  color: Colors.grey,
+                                  iconSize: 20,
+                                ),
+                              ],
+                            ),
                           ),
-                        )),
-                        
+                        ),
+
                         // Add Friend Button
                         OutlinedButton.icon(
                           onPressed: _showAddFriendDialog,
@@ -1037,7 +1103,9 @@ class _GoalTypeCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.purple.shade100 : Colors.grey.shade200,
+                color: isSelected
+                    ? Colors.purple.shade100
+                    : Colors.grey.shade200,
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -1064,7 +1132,9 @@ class _GoalTypeCard extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isSelected ? Colors.purple.shade300 : Colors.grey.shade600,
+                      color: isSelected
+                          ? Colors.purple.shade300
+                          : Colors.grey.shade600,
                     ),
                   ),
                 ],
@@ -1111,10 +1181,7 @@ class _FriendCheckboxItem extends StatelessWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.grey.shade300,
-              child: Text(
-                avatar,
-                style: const TextStyle(fontSize: 16),
-              ),
+              child: Text(avatar, style: const TextStyle(fontSize: 16)),
             ),
             const SizedBox(width: 8),
             // Name

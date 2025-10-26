@@ -35,12 +35,12 @@ const mockLoginResponse = {
     "id": "123456",
     "email": "test@example.com",
     "first_name": "John",
-    "last_name": "Doe", 
+    "last_name": "Doe",
     "phone_number": "+1234567890",
     "profile_image_url": "https://via.placeholder.com/150",
     "created_at": "2023-01-01T00:00:00Z",
-    "updated_at": "2023-01-01T00:00:00Z"
-  }
+    "updated_at": "2023-01-01T00:00:00Z",
+  },
 };
 
 // Example API Response for Profile
@@ -52,12 +52,12 @@ const mockProfileResponse = {
   "phone_number": "+1234567890",
   "profile_image_url": "https://via.placeholder.com/150",
   "created_at": "2023-01-01T00:00:00Z",
-  "updated_at": "2023-01-01T00:00:00Z"
+  "updated_at": "2023-01-01T00:00:00Z",
 };
 
 // Example API Response for Password Reset
 const mockResetPasswordResponse = {
-  "message": "Password reset link sent to your email"
+  "message": "Password reset link sent to your email",
 };
 
 /*

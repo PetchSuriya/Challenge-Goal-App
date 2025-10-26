@@ -36,12 +36,12 @@ class HomeController extends StateNotifier<HomeState> {
   /// Load user data and initialize home page
   Future<void> initialize() async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       // TODO: Load user data from API or local storage
       // Simulate loading
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // For now, use default values
       state = state.copyWith(
         isLoading: false,
@@ -83,6 +83,8 @@ class HomeController extends StateNotifier<HomeState> {
 }
 
 /// Provider for HomeController
-final homeControllerProvider = StateNotifierProvider<HomeController, HomeState>((ref) {
-  return HomeController();
-});
+final homeControllerProvider = StateNotifierProvider<HomeController, HomeState>(
+  (ref) {
+    return HomeController();
+  },
+);

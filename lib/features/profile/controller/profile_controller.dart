@@ -42,7 +42,8 @@ class ProfileState {
       isEditing: isEditing ?? this.isEditing,
       isSuccess: isSuccess ?? this.isSuccess,
       subscription: subscription ?? this.subscription,
-      isSubscriptionLoading: isSubscriptionLoading ?? this.isSubscriptionLoading,
+      isSubscriptionLoading:
+          isSubscriptionLoading ?? this.isSubscriptionLoading,
     );
   }
 
@@ -53,7 +54,8 @@ class ProfileState {
   bool get hasError => error != null;
 
   @override
-  String toString() => 'ProfileState(isLoading: $isLoading, hasUser: $hasUser, error: $error, isEditing: $isEditing, isSuccess: $isSuccess)';
+  String toString() =>
+      'ProfileState(isLoading: $isLoading, hasUser: $hasUser, error: $error, isEditing: $isEditing, isSuccess: $isSuccess)';
 }
 
 /// Controller that manages profile-related business logic and state
@@ -99,7 +101,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 
     try {
       final result = await _authService.updateProfile(updatedUser);
-      
+
       if (result.isSuccess && result.user != null) {
         state = state.copyWith(
           isLoading: false,
@@ -150,12 +152,12 @@ class ProfileController extends StateNotifier<ProfileState> {
   }
 
   /// === Image Management Methods ===
-  
+
   /// อัพเดทรูปโปรไฟล์ใหม่จากการเลือกรูปภาพ
-  /// 
+  ///
   /// Parameters:
   /// - imageFile: XFile ที่ได้จาก ImagePicker
-  /// 
+  ///
   /// Process:
   /// 1. เช็คว่ากำลังโหลดอยู่หรือไม่
   /// 2. บันทึกรูปลง local storage ด้วย ImageService
@@ -187,7 +189,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 
       // 3. บันทึกข้อมูลผ่าน AuthService
       final result = await _authService.updateProfile(updatedUser);
-      
+
       if (result.isSuccess && result.user != null) {
         state = state.copyWith(
           isLoading: false,
@@ -204,7 +206,7 @@ class ProfileController extends StateNotifier<ProfileState> {
   }
 
   /// ลบรูปโปรไฟล์ (รีเซ็ตเป็นไม่มีรูป)
-  /// 
+  ///
   /// Process:
   /// 1. อัพเดท UserModel โดยเคลียร์ profileImagePath และ profileImageUrl
   /// 2. บันทึกข้อมูลผ่าน AuthService
@@ -224,7 +226,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 
       // บันทึกข้อมูลผ่าน AuthService
       final result = await _authService.updateProfile(updatedUser);
-      
+
       if (result.isSuccess && result.user != null) {
         state = state.copyWith(
           isLoading: false,
@@ -261,13 +263,13 @@ class ProfileController extends StateNotifier<ProfileState> {
     try {
       // Simulate API call - in real app, this would call your backend
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // For demo purposes, return a free plan subscription
       final subscription = DefaultPlans.freePlan.copyWith(
         startDate: DateTime.now().subtract(const Duration(days: 30)),
         endDate: null, // Free plan doesn't expire
       );
-      
+
       state = state.copyWith(
         subscription: subscription,
         isSubscriptionLoading: false,
@@ -286,7 +288,7 @@ class ProfileController extends StateNotifier<ProfileState> {
     try {
       // Simulate API call
       await Future.delayed(const Duration(seconds: 2));
-      
+
       SubscriptionModel newSubscription;
       switch (planType) {
         case 'premium':
@@ -310,7 +312,7 @@ class ProfileController extends StateNotifier<ProfileState> {
         default:
           throw Exception('Invalid plan type');
       }
-      
+
       state = state.copyWith(
         subscription: newSubscription,
         isSubscriptionLoading: false,
@@ -330,12 +332,12 @@ class ProfileController extends StateNotifier<ProfileState> {
     try {
       // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
-      
+
       final updatedSubscription = state.subscription!.copyWith(
         isActive: false,
         autoRenew: false,
       );
-      
+
       state = state.copyWith(
         subscription: updatedSubscription,
         isSubscriptionLoading: false,
@@ -355,7 +357,7 @@ class ProfileController extends StateNotifier<ProfileState> {
     try {
       // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
-      
+
       final updatedSubscription = state.subscription!.copyWith(
         isActive: true,
         autoRenew: true,
@@ -363,7 +365,7 @@ class ProfileController extends StateNotifier<ProfileState> {
         endDate: DateTime.now().add(const Duration(days: 30)),
         nextBillingDate: DateTime.now().add(const Duration(days: 30)),
       );
-      
+
       state = state.copyWith(
         subscription: updatedSubscription,
         isSubscriptionLoading: false,
@@ -382,11 +384,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 
   void _handleProfileResult(ProfileResult result) {
     if (result.isSuccess && result.user != null) {
-      state = state.copyWith(
-        isLoading: false,
-        user: result.user,
-        error: null,
-      );
+      state = state.copyWith(isLoading: false, user: result.user, error: null);
     } else {
       _handleError(result.error ?? 'Failed to load profile');
     }
@@ -409,10 +407,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
 });
 
 /// Provider for ProfileController with dependency injection
-final profileControllerProvider = StateNotifierProvider<ProfileController, ProfileState>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return ProfileController(authService);
-});
+final profileControllerProvider =
+    StateNotifierProvider<ProfileController, ProfileState>((ref) {
+      final authService = ref.watch(authServiceProvider);
+      return ProfileController(authService);
+    });
 
 /// Computed provider for checking if user is logged in
 final isLoggedInProvider = Provider<bool>((ref) {

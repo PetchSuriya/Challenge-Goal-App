@@ -43,9 +43,15 @@ class _GoalPageState extends State<GoalPage> {
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.black87,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                icon: Icon(_showMutual ? Icons.person_outline : Icons.people_alt_outlined),
+                icon: Icon(
+                  _showMutual
+                      ? Icons.person_outline
+                      : Icons.people_alt_outlined,
+                ),
                 label: Text(_showMutual ? 'Personal' : 'Friends'),
               ),
             ],
@@ -60,11 +66,9 @@ class _GoalPageState extends State<GoalPage> {
               onPressed: () async {
                 final result = await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const GoalFormPage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const GoalFormPage()),
                 );
-                
+
                 if (result != null) {
                   // TODO: เพิ่ม goal ใหม่ลงในรายการ
                   if (context.mounted) {
@@ -87,11 +91,7 @@ class _GoalPageState extends State<GoalPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Current Streak Card
-            const _CurrentStreakCard(
-              days: 12,
-              totalDays: 100,
-              percent: 0.12,
-            ),
+            const _CurrentStreakCard(days: 12, totalDays: 100, percent: 0.12),
 
             const SizedBox(height: 16),
 
@@ -100,7 +100,11 @@ class _GoalPageState extends State<GoalPage> {
               children: [
                 Text(
                   _showMutual ? 'Mutual Goals' : 'Your Goals',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.black,
+                  ),
                 ),
                 const Spacer(),
                 Text(
@@ -227,8 +231,10 @@ class _GoalCard extends StatelessWidget {
         final totalDays = _extractFirstInt(durationText) ?? 30;
         final completedApprox = (progress * totalDays).round();
         final streak = _extractFirstInt(streakText) ?? 0;
-        final isMutual = secondProgress != null || category.toLowerCase().contains('mutual');
-        final friendCompletedApprox = ((secondProgress ?? 0) * totalDays).round();
+        final isMutual =
+            secondProgress != null || category.toLowerCase().contains('mutual');
+        final friendCompletedApprox = ((secondProgress ?? 0) * totalDays)
+            .round();
         final args = GoalDetailArgs(
           title: title,
           category: category,
@@ -244,162 +250,195 @@ class _GoalCard extends StatelessWidget {
         }
       },
       child: Card(
-      elevation: 2.5,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: themeColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
+        elevation: 2.5,
+        color: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: themeColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: themeColor),
                   ),
-                  child: Icon(icon, color: themeColor),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black,
+                          ),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          category,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Completion indicator
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: completed ? themeColor : Colors.grey.shade400,
+                        width: 2,
                       ),
-                      const SizedBox(height: 4),
+                      color: completed ? themeColor : Colors.transparent,
+                    ),
+                    child: completed
+                        ? const Icon(Icons.check, size: 14, color: Colors.white)
+                        : null,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+
+              // Progress section (single or dual bar)
+              if (secondProgress == null) ...[
+                Row(
+                  children: [
+                    const Text(
+                      'Progress',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${(progress * 100).round()}%',
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(themeColor),
+                  ),
+                ),
+              ] else ...[
+                Row(
+                  children: const [
+                    Text('Progress', style: TextStyle(color: Colors.black)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // You
+                Row(
+                  children: [
+                    const Text('You', style: TextStyle(color: Colors.black)),
+                    const Spacer(),
+                    Text(
+                      '${(progress * 100).round()}%',
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: AlwaysStoppedAnimation<Color>(themeColor),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Friend/Other
+                Row(
+                  children: [
+                    Text(
+                      secondLabel,
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${((secondProgress ?? 0) * 100).round()}%',
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: secondProgress ?? 0,
+                    minHeight: 8,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.green,
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
+
+              // Bottom row
+              Row(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.circle, size: 10, color: Colors.grey.shade500),
+                      const SizedBox(width: 6),
                       Text(
-                        category,
-                        style: const TextStyle(fontSize: 12, color: Colors.black),
+                        durationText,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                // Completion indicator
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: completed ? themeColor : Colors.grey.shade400, width: 2),
-                    color: completed ? themeColor : Colors.transparent,
+                  const Spacer(),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        streakText,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: completed
-                      ? const Icon(Icons.check, size: 14, color: Colors.white)
-                      : null,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 14),
-
-            // Progress section (single or dual bar)
-            if (secondProgress == null) ...[
-              Row(
-                children: [
-                  const Text('Progress', style: TextStyle(color: Colors.black)),
-                  const Spacer(),
-                  Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.black)),
                 ],
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(themeColor),
-                ),
-              ),
-            ] else ...[
-              Row(
-                children: const [
-                  Text('Progress', style: TextStyle(color: Colors.black)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // You
-              Row(
-                children: [
-                  const Text('You', style: TextStyle(color: Colors.black)),
-                  const Spacer(),
-                  Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.black)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(themeColor),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Friend/Other
-              Row(
-                children: [
-                  Text(secondLabel, style: const TextStyle(color: Colors.black)),
-                  const Spacer(),
-                  Text('${((secondProgress ?? 0) * 100).round()}%', style: const TextStyle(color: Colors.black)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  value: secondProgress ?? 0,
-                  minHeight: 8,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-                ),
               ),
             ],
-
-            const SizedBox(height: 12),
-
-            // Bottom row
-            Row(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.circle, size: 10, color: Colors.grey.shade500),
-                    const SizedBox(width: 6),
-                    Text(
-                      durationText,
-                      style: const TextStyle(color: Colors.black, fontSize: 12),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    const Icon(Icons.local_fire_department, size: 16, color: Colors.orange),
-                    const SizedBox(width: 6),
-                    Text(
-                      streakText,
-                      style: const TextStyle(color: Colors.black, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -417,7 +456,11 @@ class _CurrentStreakCard extends StatelessWidget {
   final int days;
   final int totalDays;
   final double percent;
-  const _CurrentStreakCard({required this.days, required this.totalDays, required this.percent});
+  const _CurrentStreakCard({
+    required this.days,
+    required this.totalDays,
+    required this.percent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -437,7 +480,10 @@ class _CurrentStreakCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Current Streak',
-                  style: TextStyle(fontWeight: FontWeight.w700, color: Colors.grey.shade800),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey.shade800,
+                  ),
                 ),
               ],
             ),
@@ -447,7 +493,11 @@ class _CurrentStreakCard extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: 'Day $days',
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.black87),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
                   ),
                   TextSpan(
                     text: ' /$totalDays',
@@ -482,7 +532,11 @@ class _GradientActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
-  const _GradientActionButton({required this.icon, required this.label, required this.onPressed});
+  const _GradientActionButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -501,12 +555,20 @@ class _GradientActionButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, color: Colors.white),
-        label: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );

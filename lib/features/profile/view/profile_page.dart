@@ -11,7 +11,7 @@ import '../../../services/image_service.dart';
 import '../../../core/constants/app_constants.dart';
 
 /// ProfilePage - หน้าแสดงข้อมูลผู้ใช้และการจัดการโปรไฟล์
-/// 
+///
 /// ฟีเจอร์หลัก:
 /// - แสดงข้อมูลส่วนตัวของผู้ใช้
 /// - แก้ไขข้อมูลส่วนตัว (ชื่อ, เพศ, วันเกิด, เบอร์โทร)
@@ -39,7 +39,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   String? _editedPhone;
 
   // === Lifecycle Methods ===
-  
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +54,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Private Initialization Methods ===
-  
+
   /// เริ่มต้น Controllers สำหรับ TextField
   void _initializeControllers() {
     _firstNameController = TextEditingController();
@@ -79,7 +79,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Helper Methods ===
-  
+
   /// เติมข้อมูลลงใน Controllers จากข้อมูล User
   void _populateControllers(UserModel user) {
     _firstNameController.text = user.firstName;
@@ -91,21 +91,31 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   /// แปลง DateTime เป็น String แบบอ่านง่าย
   String? _formatBirthday(DateTime? date) {
     if (date == null) return null;
-    
+
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    
+
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   // === Main Build Method ===
-  
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
-    
+
     // ฟัง state changes สำหรับแสดง error หรือ success messages
     _listenToStateChanges();
 
@@ -120,7 +130,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === State Management Methods ===
-  
+
   /// ฟัง state changes และแสดง SnackBar เมื่อมี error หรือ success
   void _listenToStateChanges() {
     ref.listen<ProfileState>(profileControllerProvider, (previous, next) {
@@ -144,7 +154,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === UI Builder Methods ===
-  
+
   /// แสดง SnackBar สำหรับ error
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -202,15 +212,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProfileSummary(state.user!),  // ข้อมูลสรุปโปรไฟล์
+          _buildProfileSummary(state.user!), // ข้อมูลสรุปโปรไฟล์
           const SizedBox(height: 30),
-          _buildPersonalInfo(state.user!),     // ข้อมูลส่วนตัว
+          _buildPersonalInfo(state.user!), // ข้อมูลส่วนตัว
           const SizedBox(height: 30),
-          _buildAccountSection(),              // การจัดการบัญชี
+          _buildAccountSection(), // การจัดการบัญชี
           const SizedBox(height: 30),
-          _buildSubscriptionSection(),        // การจัดการ subscription
+          _buildSubscriptionSection(), // การจัดการ subscription
           const SizedBox(height: 30),
-          _buildDangerZone(),                  // ส่วนอันตราย (logout)
+          _buildDangerZone(), // ส่วนอันตราย (logout)
           const SizedBox(height: 30),
         ],
       ),
@@ -218,7 +228,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Profile Summary Section ===
-  
+
   /// สร้างส่วนสรุปข้อมูลโปรไฟล์ (รูปโปรไฟล์, ชื่อ, อีเมล)
   Widget _buildProfileSummary(UserModel user) {
     return Container(
@@ -240,7 +250,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(20),
@@ -257,11 +270,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ],
           ),
           const SizedBox(height: 24),
-          
+
           // Profile Picture & Change Button
           _buildProfileImageWidget(user),
           const SizedBox(height: 16),
-          
+
           // Name & Verified Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -290,7 +303,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ],
           ),
           const SizedBox(height: 8),
-          
+
           // Email
           Text(
             user.email,
@@ -300,7 +313,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Member Since
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -333,7 +346,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Personal Information Section ===
-  
+
   /// สร้างส่วนข้อมูลส่วนตัว (ชื่อ, เพศ, วันเกิด, เบอร์โทร)
   /// ผู้ใช้สามารถแก้ไขข้อมูลเหล่านี้ได้โดยกดที่แต่ละรายการ
   Widget _buildPersonalInfo(UserModel user) {
@@ -369,17 +382,37 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ],
             ),
           ),
-          _buildEditableInfoItem(Icons.badge_outlined, 'Name', _editedName ?? user.fullName, () => _showEditNameDialog()),
-          _buildEditableInfoItem(Icons.wc_outlined, 'Gender', _editedGender ?? 'Male', () => _showEditGenderDialog()),
-          _buildEditableInfoItem(Icons.cake_outlined, 'Birthday', _formatBirthday(_editedBirthday) ?? 'August 15, 1990', () => _showEditBirthdayDialog()),
-          _buildEditableInfoItem(Icons.phone_outlined, 'Phone', _editedPhone ?? user.phoneNumber ?? 'Not provided', () => _showEditPhoneDialog()),
+          _buildEditableInfoItem(
+            Icons.badge_outlined,
+            'Name',
+            _editedName ?? user.fullName,
+            () => _showEditNameDialog(),
+          ),
+          _buildEditableInfoItem(
+            Icons.wc_outlined,
+            'Gender',
+            _editedGender ?? 'Male',
+            () => _showEditGenderDialog(),
+          ),
+          _buildEditableInfoItem(
+            Icons.cake_outlined,
+            'Birthday',
+            _formatBirthday(_editedBirthday) ?? 'August 15, 1990',
+            () => _showEditBirthdayDialog(),
+          ),
+          _buildEditableInfoItem(
+            Icons.phone_outlined,
+            'Phone',
+            _editedPhone ?? user.phoneNumber ?? 'Not provided',
+            () => _showEditPhoneDialog(),
+          ),
         ],
       ),
     );
   }
 
   // === Account Management Section ===
-  
+
   /// สร้างส่วนการจัดการบัญชี (เปลี่ยนอีเมล, รีเซ็ตรหัสผ่าน)
   Widget _buildAccountSection() {
     return Container(
@@ -433,12 +466,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Subscription Section ===
-  
+
   /// สร้างส่วนการจัดการ subscription
   Widget _buildSubscriptionSection() {
     final profileState = ref.watch(profileControllerProvider);
     final subscription = profileState.subscription;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -474,9 +507,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           if (profileState.isSubscriptionLoading)
             const Padding(
               padding: EdgeInsets.all(20),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: Center(child: CircularProgressIndicator()),
             )
           else if (subscription != null)
             _buildSubscriptionContent(subscription)
@@ -523,7 +554,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: _getStatusColor(subscription),
                       borderRadius: BorderRadius.circular(12),
@@ -543,35 +577,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               if (subscription.planType != 'free') ...[
                 Text(
                   '${subscription.formattedPrice} ${subscription.formattedBillingCycle}',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 if (subscription.nextBillingDate != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Next billing: ${_formatDate(subscription.nextBillingDate!)}',
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                   ),
                 ],
               ] else ...[
                 Text(
                   'Free plan with basic features',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
               ],
             ],
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Features List
         if (subscription.features.isNotEmpty) ...[
           Padding(
@@ -588,34 +613,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                ...subscription.features.map((feature) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green.shade600,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          feature,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
+                ...subscription.features.map(
+                  (feature) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: Colors.green.shade600,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            feature,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                )),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 16),
         ],
-        
+
         // Action Buttons
         _buildSubscriptionActions(subscription),
       ],
@@ -645,10 +672,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: 8),
           Text(
             'Choose a plan to unlock premium features',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -728,10 +752,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             const SizedBox(height: 4),
             Text(
               description,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -899,7 +920,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cancel Subscription'),
-        content: const Text('Are you sure you want to cancel your subscription? You will lose access to premium features.'),
+        content: const Text(
+          'Are you sure you want to cancel your subscription? You will lose access to premium features.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -923,7 +946,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Manage Subscription'),
-        content: const Text('Subscription management features will be available soon.'),
+        content: const Text(
+          'Subscription management features will be available soon.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -935,7 +960,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Danger Zone Section ===
-  
+
   /// สร้างส่วนอันตราย (ปุ่มล็อกเอาต์)
   /// ใช้สีแดงเพื่อเตือนว่าเป็นการกระทำที่อันตราย
   Widget _buildDangerZone() {
@@ -987,11 +1012,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.logout,
-                        color: Colors.red.shade600,
-                        size: 20,
-                      ),
+                      Icon(Icons.logout, color: Colors.red.shade600, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         'Logout',
@@ -1006,10 +1027,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   const SizedBox(height: 8),
                   Text(
                     'Sign out of your account on this device',
-                    style: TextStyle(
-                      color: Colors.red.shade600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.red.shade600, fontSize: 14),
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
@@ -1026,9 +1044,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       child: const Text(
                         'Logout',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
@@ -1042,22 +1058,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Reusable UI Components ===
-  
+
   /// สร้างรายการข้อมูลที่สามารถแก้ไขได้
   /// ใช้สำหรับแสดงข้อมูลส่วนตัวที่ผู้ใช้สามารถกดเพื่อแก้ไข
-  Widget _buildEditableInfoItem(IconData icon, String label, String value, VoidCallback onTap) {
+  Widget _buildEditableInfoItem(
+    IconData icon,
+    String label,
+    String value,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade100),
-          ),
+          border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: Colors.grey.shade700), // เปลี่ยนจาก shade500 เป็น shade700
+            Icon(
+              icon,
+              size: 20,
+              color: Colors.grey.shade700,
+            ), // เปลี่ยนจาก shade500 เป็น shade700
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -1067,7 +1090,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     label,
                     style: TextStyle(
                       fontSize: 14,
-                      color: const Color.fromARGB(255, 0, 0, 0), // เปลี่ยนจาก shade600 เป็น shade800
+                      color: const Color.fromARGB(
+                        255,
+                        0,
+                        0,
+                        0,
+                      ), // เปลี่ยนจาก shade600 เป็น shade800
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -1108,13 +1136,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          border: isLast ? null : Border(
-            bottom: BorderSide(color: Colors.grey.shade100),
-          ),
+          border: isLast
+              ? null
+              : Border(bottom: BorderSide(color: Colors.grey.shade100)),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: Colors.grey.shade700), // เปลี่ยนจาก shade500 เป็น shade700 สำหรับ Account section
+            Icon(
+              icon,
+              size: 20,
+              color: Colors.grey.shade700,
+            ), // เปลี่ยนจาก shade500 เป็น shade700 สำหรับ Account section
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -1142,7 +1174,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: Colors.grey.shade600, // เปลี่ยนจาก shade400 เป็น shade600 สำหรับ arrow icon
+              color: Colors
+                  .grey
+                  .shade600, // เปลี่ยนจาก shade400 เป็น shade600 สำหรับ arrow icon
             ),
           ],
         ),
@@ -1151,15 +1185,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Dialog Methods ===
-  
+
   /// แสดง Dialog ยืนยันการล็อกเอาต์
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.logout, color: Colors.red.shade600),
@@ -1201,13 +1233,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _showChangeEmailDialog() {
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.email_outlined, color: Colors.blue.shade600),
@@ -1218,7 +1248,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Enter your new email address and current password to confirm the change.'),
+            const Text(
+              'Enter your new email address and current password to confirm the change.',
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: emailController,
@@ -1251,7 +1283,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           ElevatedButton(
             onPressed: () {
-              if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+              if (emailController.text.isNotEmpty &&
+                  passwordController.text.isNotEmpty) {
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -1259,12 +1292,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       children: [
                         const Icon(Icons.check_circle, color: Colors.white),
                         const SizedBox(width: 12),
-                        Text('Email change request sent to ${emailController.text}'),
+                        Text(
+                          'Email change request sent to ${emailController.text}',
+                        ),
                       ],
                     ),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               } else {
@@ -1273,7 +1310,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     content: const Text('Please fill in all fields'),
                     backgroundColor: Colors.red,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               }
@@ -1290,17 +1329,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Personal Info Edit Dialogs ===
-  
+
   /// แสดง Dialog สำหรับแก้ไขชื่อ
   void _showEditNameDialog() {
-    final nameController = TextEditingController(text: _editedName ?? ref.read(profileControllerProvider).user?.fullName ?? '');
-    
+    final nameController = TextEditingController(
+      text:
+          _editedName ??
+          ref.read(profileControllerProvider).user?.fullName ??
+          '',
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.badge_outlined, color: Colors.blue.shade600),
@@ -1326,7 +1368,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1340,12 +1385,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     content: Text('Name updated to: ${nameController.text}'),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade600, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade600,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Save'),
           ),
         ],
@@ -1356,12 +1406,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   /// แสดง Dialog สำหรับเลือกเพศ
   void _showEditGenderDialog() {
     String selectedGender = _editedGender ?? 'Male';
-    
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Row(
             children: [
               Icon(Icons.wc_outlined, color: Colors.blue.shade600),
@@ -1395,7 +1447,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -1408,11 +1463,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     content: Text('Gender updated to: $selectedGender'),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade600, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Save'),
             ),
           ],
@@ -1447,9 +1507,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _editedBirthday != null 
-                  ? _formatBirthday(_editedBirthday)! 
-                  : 'August 15, 1990',
+                _editedBirthday != null
+                    ? _formatBirthday(_editedBirthday)!
+                    : 'August 15, 1990',
                 style: const TextStyle(fontSize: 16),
               ),
             ),
@@ -1480,7 +1540,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1488,15 +1551,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'Birthday updated to: ${_editedBirthday != null ? _formatBirthday(_editedBirthday)! : "August 15, 1990"}'
+                    'Birthday updated to: ${_editedBirthday != null ? _formatBirthday(_editedBirthday)! : "August 15, 1990"}',
                   ),
                   backgroundColor: Colors.green,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade600, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade600,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Save'),
           ),
         ],
@@ -1506,8 +1574,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// แสดง Dialog สำหรับแก้ไขเบอร์โทรศัพท์
   void _showEditPhoneDialog() {
-    final phoneController = TextEditingController(text: _editedPhone ?? ref.read(profileControllerProvider).user?.phoneNumber ?? '');
-    
+    final phoneController = TextEditingController(
+      text:
+          _editedPhone ??
+          ref.read(profileControllerProvider).user?.phoneNumber ??
+          '',
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1539,7 +1612,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1553,12 +1629,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     content: Text('Phone updated to: ${phoneController.text}'),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue.shade600, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue.shade600,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Save'),
           ),
         ],
@@ -1571,9 +1652,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(Icons.lock_reset_outlined, color: Colors.blue.shade600),
@@ -1589,7 +1668,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             SizedBox(height: 8),
             Text(
               'Please check your email and follow the instructions to reset your password.',
-              style: TextStyle(color: Colors.black87), // เปลี่ยนเป็น Colors.black87 เพื่อให้อ่านง่าย
+              style: TextStyle(
+                color: Colors.black87,
+              ), // เปลี่ยนเป็น Colors.black87 เพื่อให้อ่านง่าย
             ),
           ],
         ),
@@ -1615,7 +1696,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                   backgroundColor: Colors.blue,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               );
             },
@@ -1631,9 +1714,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   // === Profile Image Widget ===
-  
+
   /// สร้าง Widget สำหรับแสดงรูปโปรไฟล์พร้อมปุ่มเปลี่ยนรูป
-  /// 
+  ///
   /// ฟีเจอร์:
   /// - แสดงรูปโปรไฟล์จาก local path หรือ URL
   /// - แสดง placeholder ถ้าไม่มีรูป
@@ -1641,7 +1724,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   /// - Loading indicator ระหว่างอัพโหลด
   Widget _buildProfileImageWidget(UserModel user) {
     final profileState = ref.watch(profileControllerProvider);
-    
+
     return GestureDetector(
       onTap: () => _showImagePickerDialog(),
       child: Stack(
@@ -1660,7 +1743,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             child: _buildProfileImageContent(user),
           ),
-          
+
           // Loading Overlay ระหว่างอัพโหลด
           if (profileState.isLoading)
             Container(
@@ -1677,7 +1760,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ),
             ),
-          
+
           // ปุ่มกล้อง
           if (!profileState.isLoading)
             Positioned(
@@ -1707,14 +1790,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildProfileImageContent(UserModel user) {
     // ใช้ effectiveProfileImage ที่จะเลือก local path ก่อน แล้วค่อย URL
     final imageSource = user.effectiveProfileImage;
-    
+
     if (imageSource == null || imageSource.isEmpty) {
       // ไม่มีรูป - แสดง placeholder
-      return const Icon(
-        Icons.person,
-        size: 50,
-        color: Colors.white,
-      );
+      return const Icon(Icons.person, size: 50, color: Colors.white);
     }
 
     // มีรูป - ตรวจสอบว่าเป็น local file หรือ network URL
@@ -1728,11 +1807,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           height: 100,
           errorBuilder: (context, error, stackTrace) {
             // ถ้าโหลดรูปไม่ได้ แสดง placeholder
-            return const Icon(
-              Icons.person,
-              size: 50,
-              color: Colors.white,
-            );
+            return const Icon(Icons.person, size: 50, color: Colors.white);
           },
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
@@ -1756,11 +1831,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           height: 100,
           errorBuilder: (context, error, stackTrace) {
             // ถ้าโหลดไฟล์ไม่ได้ แสดง placeholder
-            return const Icon(
-              Icons.person,
-              size: 50,
-              color: Colors.white,
-            );
+            return const Icon(Icons.person, size: 50, color: Colors.white);
           },
         ),
       );
@@ -1768,7 +1839,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   /// แสดง Dialog สำหรับเลือกแหล่งที่มาของรูปภาพ
-  /// 
+  ///
   /// ตัวเลือก:
   /// - เลือกจากแกลเลอรี่
   /// - ถ่ายรูปด้วยกล้อง
@@ -1799,23 +1870,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Title
                 const Text(
                   'เปลี่ยนรูปโปรไฟล์',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Gallery Option
                 ListTile(
-                  leading: const Icon(
-                    Icons.photo_library,
-                    color: Colors.blue,
-                  ),
+                  leading: const Icon(Icons.photo_library, color: Colors.blue),
                   title: const Text('เลือกจากแกลเลอรี่'),
                   subtitle: const Text('เลือกรูปจากอัลบั้มของคุณ'),
                   onTap: () {
@@ -1823,13 +1888,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     _pickImageFromSource(ImageSource.gallery);
                   },
                 ),
-                
+
                 // Camera Option
                 ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt,
-                    color: Colors.green,
-                  ),
+                  leading: const Icon(Icons.camera_alt, color: Colors.green),
                   title: const Text('ถ่ายรูปใหม่'),
                   subtitle: const Text('ถ่ายรูปใหม่ด้วยกล้อง'),
                   onTap: () {
@@ -1837,14 +1899,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     _pickImageFromSource(ImageSource.camera);
                   },
                 ),
-                
+
                 // Remove Image Option (แสดงเฉพาะเมื่อมีรูปอยู่)
                 if (hasImage)
                   ListTile(
-                    leading: const Icon(
-                      Icons.delete,
-                      color: Colors.red,
-                    ),
+                    leading: const Icon(Icons.delete, color: Colors.red),
                     title: const Text(
                       'ลบรูปโปรไฟล์',
                       style: TextStyle(color: Colors.red),
@@ -1855,9 +1914,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       _removeProfileImage();
                     },
                   ),
-                
+
                 const SizedBox(height: 10),
-                
+
                 // Cancel Button
                 SizedBox(
                   width: double.infinity,
@@ -1865,10 +1924,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text(
                       'ยกเลิก',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -1881,13 +1937,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   /// เลือกรูปจากแหล่งที่ระบุและอัพเดทโปรไฟล์
-  /// 
+  ///
   /// Parameters:
   /// - source: แหล่งที่มาของรูป (gallery หรือ camera)
   Future<void> _pickImageFromSource(ImageSource source) async {
     try {
       final XFile? selectedImage;
-      
+
       if (source == ImageSource.gallery) {
         selectedImage = await ImageService.pickFromGallery();
       } else {
@@ -1896,8 +1952,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
       if (selectedImage != null) {
         // อัพเดทรูปโปรไฟล์ผ่าน ProfileController
-        await ref.read(profileControllerProvider.notifier).updateProfileImage(selectedImage);
-        
+        await ref
+            .read(profileControllerProvider.notifier)
+            .updateProfileImage(selectedImage);
+
         // แสดงข้อความสำเร็จ
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1911,7 +1969,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
@@ -1930,7 +1990,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -1951,7 +2013,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       if (confirmed) {
         // ลบรูปโปรไฟล์ผ่าน ProfileController
         await ref.read(profileControllerProvider.notifier).removeProfileImage();
-        
+
         // แสดงข้อความสำเร็จ
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1965,7 +2027,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
@@ -1984,7 +2048,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -1992,13 +2058,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   /// แสดง Confirmation Dialog สำหรับการดำเนินการที่สำคัญ
-  /// 
+  ///
   /// Parameters:
   /// - title: หัวข้อของ dialog
   /// - message: ข้อความที่จะแสดง
   /// - confirmText: ข้อความปุ่มยืนยัน (default: 'ยืนยัน')
   /// - confirmColor: สีของปุ่มยืนยัน (default: Colors.red)
-  /// 
+  ///
   /// Return: true ถ้า user กดยืนยัน, false ถ้ายกเลิก
   Future<bool> _showConfirmationDialog({
     required String title,
@@ -2007,36 +2073,37 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     Color confirmColor = Colors.red,
   }) async {
     return await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text(
-                'ยกเลิก',
-                style: TextStyle(color: Colors.grey),
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(title),
+              content: Text(message),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: confirmColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text(
+                    'ยกเลิก',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
-              ),
-              child: Text(confirmText),
-            ),
-          ],
-        );
-      },
-    ) ?? false; // ถ้ากด back หรือกดนอก dialog ให้ return false
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: confirmColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(confirmText),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false; // ถ้ากด back หรือกดนอก dialog ให้ return false
   }
 }

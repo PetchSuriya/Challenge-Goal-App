@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 /// ImageService - บริการจัดการรูปภาพโปรไฟล์
-/// 
+///
 /// หน้าที่หลัก:
 /// - เลือกรูปภาพจากแกลเลอรี่หรือกล้อง
 /// - บันทึกรูปภาพไปยัง local storage
@@ -17,10 +17,10 @@ class ImageService {
   static final ImagePicker _picker = ImagePicker();
 
   /// === การเลือกรูปภาพ ===
-  
+
   /// เลือกรูปภาพจากแกลเลอรี่
   /// Return: XFile? - file ที่เลือก หรือ null ถ้าไม่ได้เลือก
-  /// 
+  ///
   /// ตัวอย่างการใช้งาน:
   /// ```dart
   /// final XFile? image = await ImageService.pickFromGallery();
@@ -34,8 +34,8 @@ class ImageService {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80, // ลดคุณภาพเป็น 80% เพื่อประหยัด storage
-        maxWidth: 1024,   // กำหนดขนาดสูงสุด 1024px
-        maxHeight: 1024,  // กำหนดขนาดสูงสุด 1024px
+        maxWidth: 1024, // กำหนดขนาดสูงสุด 1024px
+        maxHeight: 1024, // กำหนดขนาดสูงสุด 1024px
       );
       return image;
     } catch (e) {
@@ -47,7 +47,7 @@ class ImageService {
 
   /// เลือกรูปภาพจากกล้อง
   /// Return: XFile? - file ที่ถ่าย หรือ null ถ้าไม่ได้ถ่าย
-  /// 
+  ///
   /// ตัวอย่างการใช้งาน:
   /// ```dart
   /// final XFile? image = await ImageService.pickFromCamera();
@@ -61,8 +61,8 @@ class ImageService {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80, // ลดคุณภาพเป็น 80%
-        maxWidth: 1024,   // กำหนดขนาดสูงสุด 1024px
-        maxHeight: 1024,  // กำหนดขนาดสูงสุด 1024px
+        maxWidth: 1024, // กำหนดขนาดสูงสุด 1024px
+        maxHeight: 1024, // กำหนดขนาดสูงสุด 1024px
       );
       return image;
     } catch (e) {
@@ -73,15 +73,15 @@ class ImageService {
   }
 
   /// === การบันทึกรูปภาพ ===
-  
+
   /// บันทึกรูปภาพไปยัง local storage ของแอป
-  /// 
+  ///
   /// Parameters:
   /// - imageFile: XFile ที่จะบันทึก
   /// - userId: ID ของผู้ใช้ (ใช้สำหรับตั้งชื่อไฟล์)
-  /// 
+  ///
   /// Return: String? - path ของไฟล์ที่บันทึก หรือ null ถ้าเกิดข้อผิดพลาด
-  /// 
+  ///
   /// ตัวอย่างการใช้งาน:
   /// ```dart
   /// final String? savedPath = await ImageService.saveProfileImage(
@@ -104,11 +104,11 @@ class ImageService {
       }
 
       // สำหรับ Mobile platforms (Android, iOS)
-      
+
       // 1. หา directory ที่จะเก็บไฟล์
       final Directory appDir = await getApplicationDocumentsDirectory();
       final String profileImagesDir = path.join(appDir.path, 'profile_images');
-      
+
       // 2. สร้าง directory ถ้ายังไม่มี
       final Directory profileDir = Directory(profileImagesDir);
       if (!await profileDir.exists()) {
@@ -116,7 +116,8 @@ class ImageService {
       }
 
       // 3. สร้างชื่อไฟล์ใหม่ตาม pattern: profile_{userId}_{timestamp}.jpg
-      final String fileName = 'profile_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String fileName =
+          'profile_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String newPath = path.join(profileImagesDir, fileName);
 
       // 4. Copy ไฟล์จาก temporary path ไปยัง permanent path
@@ -135,14 +136,14 @@ class ImageService {
   }
 
   /// === Helper Methods ===
-  
+
   /// ลบไฟล์โปรไฟล์เก่าของผู้ใช้เพื่อประหยัด storage
-  /// 
+  ///
   /// Parameters:
   /// - userId: ID ของผู้ใช้
   /// - profileImagesDir: path ของ directory ที่เก็บรูปโปรไฟล์
   static Future<void> _deleteOldProfileImages(
-    String userId, 
+    String userId,
     String profileImagesDir,
   ) async {
     try {
@@ -151,18 +152,20 @@ class ImageService {
 
       // หาไฟล์ทั้งหมดในโฟลเดอร์
       final List<FileSystemEntity> files = await dir.list().toList();
-      
+
       // กรองเฉพาะไฟล์ที่เป็นของ user นี้
       final List<File> userProfileFiles = files
           .whereType<File>()
-          .where((file) => path.basename(file.path).startsWith('profile_$userId'))
+          .where(
+            (file) => path.basename(file.path).startsWith('profile_$userId'),
+          )
           .toList();
 
       // เรียงตามเวลา (ใหม่สุดก่อน)
-      userProfileFiles.sort((a, b) => 
-        File(b.path).lastModifiedSync().compareTo(
-          File(a.path).lastModifiedSync()
-        )
+      userProfileFiles.sort(
+        (a, b) => File(
+          b.path,
+        ).lastModifiedSync().compareTo(File(a.path).lastModifiedSync()),
       );
 
       // เก็บไฟล์ใหม่สุด 1 ไฟล์ ลบที่เหลือ
@@ -178,30 +181,30 @@ class ImageService {
   }
 
   /// ตรวจสอบว่าไฟล์รูปภาพมีอยู่จริงหรือไม่
-  /// 
+  ///
   /// Parameters:
   /// - imagePath: path ของรูปภาพที่จะตรวจสอบ
-  /// 
+  ///
   /// Return: bool - true ถ้าไฟล์มีอยู่, false ถ้าไม่มี
   static Future<bool> imageExists(String? imagePath) async {
     if (imagePath == null || imagePath.isEmpty) return false;
-    
+
     // สำหรับ Web - เช็คว่าเป็น valid URL หรือไม่
     if (kIsWeb) {
       return imagePath.startsWith('blob:') || imagePath.startsWith('http');
     }
-    
+
     // สำหรับ Mobile - เช็คว่าไฟล์มีอยู่จริง
     return await File(imagePath).exists();
   }
 
   /// แสดง bottom sheet ให้เลือกว่าจะเลือกรูปจากแหล่งไหน
-  /// 
+  ///
   /// Parameters:
   /// - context: BuildContext สำหรับแสดง bottom sheet
-  /// 
+  ///
   /// Return: XFile? - ไฟล์รูปที่เลือก หรือ null ถ้าไม่ได้เลือก
-  /// 
+  ///
   /// ตัวอย่างการใช้งาน:
   /// ```dart
   /// final XFile? selectedImage = await ImageService.showImageSourceDialog(context);
@@ -232,23 +235,17 @@ class ImageService {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Title
                 const Text(
                   'เลือกรูปภาพจาก',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Gallery Option
                 ListTile(
-                  leading: const Icon(
-                    Icons.photo_library,
-                    color: Colors.blue,
-                  ),
+                  leading: const Icon(Icons.photo_library, color: Colors.blue),
                   title: const Text('แกลเลอรี่'),
                   subtitle: const Text('เลือกรูปจากอัลบั้มของคุณ'),
                   onTap: () async {
@@ -259,13 +256,10 @@ class ImageService {
                     }
                   },
                 ),
-                
+
                 // Camera Option
                 ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt,
-                    color: Colors.green,
-                  ),
+                  leading: const Icon(Icons.camera_alt, color: Colors.green),
                   title: const Text('กล้อง'),
                   subtitle: const Text('ถ่ายรูปใหม่ด้วยกล้อง'),
                   onTap: () async {
@@ -276,9 +270,9 @@ class ImageService {
                     }
                   },
                 ),
-                
+
                 const SizedBox(height: 10),
-                
+
                 // Cancel Button
                 SizedBox(
                   width: double.infinity,
@@ -286,10 +280,7 @@ class ImageService {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text(
                       'ยกเลิก',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ),
                 ),

@@ -31,7 +31,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginControllerProvider);
     final screenSize = MediaQuery.of(context).size;
-    
+
     // Listen to state changes
     ref.listen<LoginState>(loginControllerProvider, (previous, next) {
       if (next.error != null) {
@@ -40,13 +40,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             content: Text(next.error!),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       } else if (next.isSuccess && next.user != null) {
         // Force reload profile data
         ref.read(profileControllerProvider.notifier).forceReloadProfile();
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -58,7 +60,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
         // Navigate to home page
@@ -77,23 +81,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: screenSize.height * 0.08),
-                
+
                 // App Logo and Branding
                 _buildHeader(),
                 SizedBox(height: screenSize.height * 0.06),
-                
+
                 // Login Form
                 _buildLoginForm(),
                 const SizedBox(height: 16),
-                
+
                 // Remember Me & Forgot Password
                 _buildOptionsRow(),
                 const SizedBox(height: 32),
-                
+
                 // Login Button
                 _buildLoginButton(loginState),
                 const SizedBox(height: 32),
-                
+
                 // Footer
                 _buildFooter(),
               ],
@@ -133,7 +137,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
         const SizedBox(height: 24),
-        
+
         // Welcome Text
         const Text(
           'Welcome Back!',
@@ -193,7 +197,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             },
           ),
           const SizedBox(height: 20),
-          
+
           // Password Field
           CustomTextField(
             controller: _passwordController,
@@ -203,7 +207,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: Colors.grey.shade600,
               ),
               onPressed: () {
@@ -255,7 +261,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
           ],
         ),
-        
+
         // Forgot Password
         TextButton(
           onPressed: () {
@@ -267,9 +273,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
           child: const Text(
             'Forgot Password?',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -327,7 +331,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ],
               )
             : const Text(
-                'Sign In',
+                'Login',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -341,47 +345,81 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget _buildFooter() {
     return Column(
       children: [
-        // Register Link
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Don't have an account? ",
-              style: TextStyle(
+        // Register Link with simple styling
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.person_add_outlined,
                 color: Colors.grey.shade600,
-                fontSize: 14,
+                size: 20,
               ),
-            ),
-            GestureDetector(
-              onTap: () => context.go('/register'),
-              child: Text(
-                'Sign Up',
+              const SizedBox(width: 8),
+              Text(
+                "Don't have an account? ",
                 style: TextStyle(
-                  color: Colors.blue.shade600,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade600,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          '© 2025 Bento App',
-          style: TextStyle(
-            color: Colors.grey.shade500,
-            fontSize: 12,
+              GestureDetector(
+                onTap: () => context.go('/register'),
+                child: Text(
+                  'Sign Up',
+                  style: TextStyle(
+                    color: Colors.blue.shade600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.blue.shade600,
+                    decorationThickness: 2,
+                  ),
+                ),
+              ),
+            ],
           ),
-          textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Secure & Trusted',
-          style: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 10,
+        const SizedBox(height: 32),
+        
+        // App info section
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            children: [
+              Text(
+                '© 2025 Bento App',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shield_outlined,
+                    color: Colors.grey.shade400,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Secure & Trusted',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
@@ -389,10 +427,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      ref.read(loginControllerProvider.notifier).login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      ref
+          .read(loginControllerProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text);
     }
   }
 }

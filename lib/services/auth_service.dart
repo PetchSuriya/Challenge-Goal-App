@@ -14,7 +14,8 @@ class LoginResult {
   const LoginResult.failure(this.error) : isSuccess = false, user = null;
 
   @override
-  String toString() => 'LoginResult(isSuccess: $isSuccess, hasUser: ${user != null}, error: $error)';
+  String toString() =>
+      'LoginResult(isSuccess: $isSuccess, hasUser: ${user != null}, error: $error)';
 }
 
 /// Profile operation result
@@ -27,7 +28,8 @@ class ProfileResult {
   const ProfileResult.failure(this.error) : isSuccess = false, user = null;
 
   @override
-  String toString() => 'ProfileResult(isSuccess: $isSuccess, hasUser: ${user != null}, error: $error)';
+  String toString() =>
+      'ProfileResult(isSuccess: $isSuccess, hasUser: ${user != null}, error: $error)';
 }
 
 /// Reset password operation result
@@ -39,11 +41,12 @@ class ResetPasswordResult {
   const ResetPasswordResult.failure(this.error) : isSuccess = false;
 
   @override
-  String toString() => 'ResetPasswordResult(isSuccess: $isSuccess, error: $error)';
+  String toString() =>
+      'ResetPasswordResult(isSuccess: $isSuccess, error: $error)';
 }
 
 /// Authentication service that handles all auth-related operations
-/// 
+///
 /// This service provides login, profile management, and token handling
 /// with proper error handling and mock data for development.
 class AuthService {
@@ -60,12 +63,13 @@ class AuthService {
   static const String _userDataKey = AppConstants.userDataKey;
 
   // Mock credentials for development
-  static const List<Map<String, String>> _validCredentials = AppConstants.mockCredentials;
+  static const List<Map<String, String>> _validCredentials =
+      AppConstants.mockCredentials;
 
   /// Initialize the service (call this at app startup)
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       _prefs = await SharedPreferences.getInstance();
       _isInitialized = true;
@@ -79,10 +83,10 @@ class AuthService {
   /// Authenticate user with email and password
   Future<LoginResult> login(String email, String password) async {
     await _ensureInitialized();
-    
+
     try {
       print('AuthService: Attempting login with email: $email');
-      
+
       // Validate input
       final validationError = _validateLoginInput(email, password);
       if (validationError != null) {
@@ -96,14 +100,13 @@ class AuthService {
 
       // Simulate API delay
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // Create user and save session
       final user = _createMockUser(email);
       await _saveUserSession(user);
-      
+
       print('AuthService: Login successful!');
       return LoginResult.success(user);
-      
     } catch (e) {
       print('AuthService: Login error - $e');
       return LoginResult.failure('Login failed: ${e.toString()}');
@@ -113,7 +116,7 @@ class AuthService {
   /// Get user profile data
   Future<ProfileResult> getProfile() async {
     await _ensureInitialized();
-    
+
     try {
       final storedUser = await getUserData();
       if (storedUser != null) {
@@ -129,14 +132,14 @@ class AuthService {
   /// Update user profile
   Future<ProfileResult> updateProfile(UserModel user) async {
     await _ensureInitialized();
-    
+
     try {
       // Simulate API delay
       await Future.delayed(const Duration(seconds: 1));
-      
+
       // Update timestamps
       final updatedUser = user.copyWith(updatedAt: DateTime.now());
-      
+
       await saveUserData(updatedUser);
       return ProfileResult.success(updatedUser);
     } catch (e) {
@@ -147,18 +150,20 @@ class AuthService {
   /// Send password reset email
   Future<ResetPasswordResult> resetPassword(String email) async {
     await _ensureInitialized();
-    
+
     try {
       if (email.trim().isEmpty) {
         return const ResetPasswordResult.failure('Email is required');
       }
-      
+
       // Simulate API delay
       await Future.delayed(const Duration(seconds: 1));
-      
+
       return const ResetPasswordResult.success();
     } catch (e) {
-      return ResetPasswordResult.failure('Failed to send reset email: ${e.toString()}');
+      return ResetPasswordResult.failure(
+        'Failed to send reset email: ${e.toString()}',
+      );
     }
   }
 
@@ -188,7 +193,7 @@ class AuthService {
   /// Get stored user data
   Future<UserModel?> getUserData() async {
     await _ensureInitialized();
-    
+
     try {
       final userDataString = _prefs?.getString(_userDataKey);
       if (userDataString != null && userDataString.isNotEmpty) {
@@ -225,7 +230,7 @@ class AuthService {
   /// Logout user and clear all data
   Future<void> logout() async {
     await _ensureInitialized();
-    
+
     try {
       await removeAccessToken();
       await removeUserData();
@@ -254,10 +259,12 @@ class AuthService {
   bool _isValidCredentials(String email, String password) {
     final normalizedEmail = email.trim().toLowerCase();
     final normalizedPassword = password.trim();
-    
-    return _validCredentials.any((cred) =>
-        cred['email']!.toLowerCase() == normalizedEmail &&
-        cred['password'] == normalizedPassword);
+
+    return _validCredentials.any(
+      (cred) =>
+          cred['email']!.toLowerCase() == normalizedEmail &&
+          cred['password'] == normalizedPassword,
+    );
   }
 
   String _getInvalidCredentialsMessage() {

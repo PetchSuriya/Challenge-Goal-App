@@ -35,19 +35,17 @@ class ResetPasswordState {
 class ResetPasswordController extends StateNotifier<ResetPasswordState> {
   final AuthService _authService;
 
-  ResetPasswordController(this._authService) : super(const ResetPasswordState());
+  ResetPasswordController(this._authService)
+    : super(const ResetPasswordState());
 
   Future<void> resetPassword(String email) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final result = await _authService.resetPassword(email);
-      
+
       if (result.isSuccess) {
-        state = state.copyWith(
-          isLoading: false,
-          isSuccess: true,
-        );
+        state = state.copyWith(isLoading: false, isSuccess: true);
       } else {
         state = state.copyWith(
           isLoading: false,
@@ -72,10 +70,11 @@ class ResetPasswordController extends StateNotifier<ResetPasswordState> {
 }
 
 // Provider
-final resetPasswordControllerProvider = StateNotifierProvider<ResetPasswordController, ResetPasswordState>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return ResetPasswordController(authService);
-});
+final resetPasswordControllerProvider =
+    StateNotifierProvider<ResetPasswordController, ResetPasswordState>((ref) {
+      final authService = ref.watch(authServiceProvider);
+      return ResetPasswordController(authService);
+    });
 
 // Auth service provider
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -102,15 +101,15 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     final resetState = ref.watch(resetPasswordControllerProvider);
-    
+
     // Listen to state changes
-    ref.listen<ResetPasswordState>(resetPasswordControllerProvider, (previous, next) {
+    ref.listen<ResetPasswordState>(resetPasswordControllerProvider, (
+      previous,
+      next,
+    ) {
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(next.error!), backgroundColor: Colors.red),
         );
       } else if (next.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -145,33 +144,23 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Icon
-              const Icon(
-                Icons.lock_reset,
-                size: 100,
-                color: Colors.blue,
-              ),
+              const Icon(Icons.lock_reset, size: 100, color: Colors.blue),
               const SizedBox(height: 32),
-              
+
               // Title and Description
               const Text(
                 'Reset Your Password',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
                 'Enter your email address and we\'ll send you a link to reset your password.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               // Email Field
               CustomTextField(
                 controller: _emailController,
@@ -190,7 +179,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 },
               ),
               const SizedBox(height: 24),
-              
+
               // Reset Password Button
               CustomButton(
                 text: 'Send Reset Link',
@@ -198,13 +187,13 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 onPressed: _handleResetPassword,
               ),
               const SizedBox(height: 16),
-              
+
               // Back to Login Button
               TextButton(
                 onPressed: () => context.go(AppConstants.loginRoute),
                 child: const Text('Back to Login'),
               ),
-              
+
               // Success Message
               if (resetState.isSuccess) ...[
                 const SizedBox(height: 24),
@@ -241,9 +230,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
 
   void _handleResetPassword() {
     if (_formKey.currentState!.validate()) {
-      ref.read(resetPasswordControllerProvider.notifier).resetPassword(
-        _emailController.text.trim(),
-      );
+      ref
+          .read(resetPasswordControllerProvider.notifier)
+          .resetPassword(_emailController.text.trim());
     }
   }
 }

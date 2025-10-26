@@ -43,9 +43,9 @@ class LoginController extends StateNotifier<LoginState> {
     try {
       print('Login controller: attempting login with $email');
       final result = await _authService.login(email, password);
-      
+
       print('Login controller: result isSuccess = ${result.isSuccess}');
-      
+
       if (result.isSuccess && result.user != null) {
         print('Login controller: login successful, setting state');
         state = state.copyWith(
@@ -83,7 +83,8 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService();
 });
 
-final loginControllerProvider = StateNotifierProvider<LoginController, LoginState>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return LoginController(authService);
-});
+final loginControllerProvider =
+    StateNotifierProvider<LoginController, LoginState>((ref) {
+      final authService = ref.watch(authServiceProvider);
+      return LoginController(authService);
+    });

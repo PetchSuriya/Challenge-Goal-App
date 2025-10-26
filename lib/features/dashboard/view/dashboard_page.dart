@@ -157,7 +157,10 @@ class DashboardPage extends StatelessWidget {
               const Spacer(),
               Text(
                 c.title,
-                style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -201,10 +204,13 @@ class _SummaryCardData {
   final String title;
   final String value;
   final Color color;
-  _SummaryCardData({required this.icon, required this.title, required this.value, required this.color});
+  _SummaryCardData({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+  });
 }
-
-
 
 class _Header extends StatelessWidget {
   @override
@@ -259,7 +265,7 @@ class _Header extends StatelessWidget {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -270,7 +276,11 @@ class _GradientButton extends StatelessWidget {
   final VoidCallback onPressed;
   final IconData icon;
   final String label;
-  const _GradientButton({required this.onPressed, required this.icon, required this.label});
+  const _GradientButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -296,12 +306,17 @@ class _GradientButton extends StatelessWidget {
         icon: Icon(icon, color: Colors.white),
         label: Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );

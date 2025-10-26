@@ -38,13 +38,8 @@ class AppRoutes {
     redirect: (context, state) async {
       // ตรวจสอบว่าผู้ใช้กำลังเข้าถึงหน้าไหน
       final isLoginRoute = state.matchedLocation == AppConstants.loginRoute;
-<<<<<<< HEAD
       final isRegisterRoute = state.matchedLocation == AppConstants.registerRoute;
       final isResetPasswordRoute = state.matchedLocation == AppConstants.resetPasswordRoute;
-=======
-      final isResetPasswordRoute =
-          state.matchedLocation == AppConstants.resetPasswordRoute;
->>>>>>> 3e10717bbec771133ae7f88aad415c34f871eb5a
 
       // อนุญาตให้เข้าถึงหน้า Login, Register และ Reset Password ได้เสมอ (Public Routes)
       if (isLoginRoute || isRegisterRoute || isResetPasswordRoute) return null;

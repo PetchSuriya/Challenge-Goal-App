@@ -20,12 +20,12 @@ class _RegisterPageState extends State<RegisterPage> {
   final _dobController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   String _selectedCountryCode = '+66';
-  
+
   // TODO: เปลี่ยนเป็น endpoint จริงของคุณ
   final String _registerUrl = 'https://example.com/api/register';
   late final Dio _dio;
@@ -57,18 +57,19 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: const Color(0xFF007AFF),
-            ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: const Color(0xFF007AFF)),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
-        _dobController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dobController.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -108,9 +109,9 @@ class _RegisterPageState extends State<RegisterPage> {
         if (token != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', token);
-          
+
           if (!mounted) return;
-          
+
           // แสดงข้อความสำเร็จ
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -118,16 +119,21 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 12),
-                  Text('สมัครสมาชิกสำเร็จ!', style: TextStyle(fontWeight: FontWeight.w500)),
+                  Text(
+                    'สมัครสมาชิกสำเร็จ!',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               margin: const EdgeInsets.all(16),
             ),
           );
-          
+
           // ไปยังหน้า Login หลังสมัครสำเร็จ
           await Future.delayed(const Duration(seconds: 1));
           if (mounted) context.go('/login');
@@ -136,7 +142,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } on DioException catch (e) {
       if (!mounted) return;
       String message = 'เกิดข้อผิดพลาด';
-      
+
       if (e.response != null) {
         message = 'เกิดข้อผิดพลาด (status ${e.response!.statusCode})';
         try {
@@ -152,7 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
       } else {
         message = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -164,7 +170,9 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -175,7 +183,9 @@ class _RegisterPageState extends State<RegisterPage> {
           content: Text('Error: $e'),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -223,7 +233,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
@@ -235,19 +245,19 @@ class _RegisterPageState extends State<RegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: screenSize.height * 0.04),
-                
+
                 // Header
                 _buildHeader(),
                 SizedBox(height: screenSize.height * 0.04),
-                
+
                 // Register Form
                 _buildRegisterForm(),
                 const SizedBox(height: 32),
-                
+
                 // Register Button
                 _buildRegisterButton(),
                 const SizedBox(height: 24),
-                
+
                 // Login Link
                 _buildFooter(),
               ],
@@ -280,14 +290,10 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.person_add,
-            size: 60,
-            color: Colors.white,
-          ),
+          child: const Icon(Icons.person_add, size: 60, color: Colors.white),
         ),
         const SizedBox(height: 24),
-        
+
         // Welcome Text
         const Text(
           'Create Account',
@@ -338,7 +344,7 @@ class _RegisterPageState extends State<RegisterPage> {
             validator: _validateName,
           ),
           const SizedBox(height: 20),
-          
+
           // Last Name
           CustomTextField(
             controller: _lastNameController,
@@ -385,7 +391,9 @@ class _RegisterPageState extends State<RegisterPage> {
             prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
             suffixIcon: IconButton(
               icon: Icon(
-                _isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _isPasswordVisible
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: Colors.grey.shade600,
               ),
               onPressed: () {
@@ -407,7 +415,9 @@ class _RegisterPageState extends State<RegisterPage> {
             prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
             suffixIcon: IconButton(
               icon: Icon(
-                _isConfirmPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _isConfirmPasswordVisible
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: Colors.grey.shade600,
               ),
               onPressed: () {
@@ -445,9 +455,14 @@ class _RegisterPageState extends State<RegisterPage> {
             children: [
               // Country Code
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
-                  border: Border(right: BorderSide(color: Colors.grey.shade300)),
+                  border: Border(
+                    right: BorderSide(color: Colors.grey.shade300),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -457,7 +472,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       _selectedCountryCode,
                       style: const TextStyle(
-                        fontSize: 16, 
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Colors.black,
                       ),
@@ -473,14 +488,14 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _phoneController,
                   validator: _validatePhone,
                   keyboardType: TextInputType.phone,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
+                  style: const TextStyle(fontSize: 16, color: Colors.black),
                   decoration: const InputDecoration(
                     hintText: '(454) 726-0592',
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                   ),
                 ),
               ),
@@ -545,10 +560,7 @@ class _RegisterPageState extends State<RegisterPage> {
       children: [
         Text(
           'Already have an account? ',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
         ),
         GestureDetector(
           onTap: () => context.go('/login'),
@@ -565,5 +577,4 @@ class _RegisterPageState extends State<RegisterPage> {
       ],
     );
   }
-
 }

@@ -27,7 +27,7 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     if (isOutlined) {
       return SizedBox(
         width: width,
@@ -35,9 +35,7 @@ class CustomButton extends StatelessWidget {
         child: OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(
-              color: backgroundColor ?? theme.primaryColor,
-            ),
+            side: BorderSide(color: backgroundColor ?? theme.primaryColor),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -55,9 +53,7 @@ class CustomButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor ?? theme.primaryColor,
           foregroundColor: textColor ?? Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: _buildButtonContent(context),
       ),
@@ -84,10 +80,7 @@ class CustomButton extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ],
       );
@@ -95,10 +88,7 @@ class CustomButton extends StatelessWidget {
 
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
     );
   }
 }

@@ -24,10 +24,12 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
     super.initState();
     // Initialize friend's data when the page loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(friendsControllerProvider.notifier).initializeFriend(
-        friendName: widget.friendName,
-        friendAvatarUrl: widget.friendAvatarUrl,
-      );
+      ref
+          .read(friendsControllerProvider.notifier)
+          .initializeFriend(
+            friendName: widget.friendName,
+            friendAvatarUrl: widget.friendAvatarUrl,
+          );
     });
   }
 
@@ -52,9 +54,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                     top: 80, // Position below top bar
                     left: 0,
                     right: 0,
-                    child: Center(
-                      child: _buildFriendAvatar(friendsState),
-                    ),
+                    child: Center(child: _buildFriendAvatar(friendsState)),
                   ),
 
                   // Mutual Goal Button (Bottom)
@@ -62,9 +62,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                     bottom: 60,
                     left: 0,
                     right: 0,
-                    child: Center(
-                      child: _buildMutualGoalButton(context),
-                    ),
+                    child: Center(child: _buildMutualGoalButton(context)),
                   ),
                 ],
               ),
@@ -91,10 +89,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.green.shade300,
-                        Colors.green.shade500,
-                      ],
+                      colors: [Colors.green.shade300, Colors.green.shade500],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -148,11 +143,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.close,
-                color: Colors.grey.shade600,
-                size: 24,
-              ),
+              child: Icon(Icons.close, color: Colors.grey.shade600, size: 24),
             ),
           ),
         ],
@@ -186,10 +177,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
             height: 200,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.green.shade200,
-                  Colors.green.shade400,
-                ],
+                colors: [Colors.green.shade200, Colors.green.shade400],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -221,10 +209,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
       height: 56,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.green.shade500,
-            Colors.green.shade700,
-          ],
+          colors: [Colors.green.shade500, Colors.green.shade700],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -284,15 +269,10 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(
-              Icons.construction,
-              color: Colors.orange.shade600,
-            ),
+            Icon(Icons.construction, color: Colors.orange.shade600),
             const SizedBox(width: 12),
             const Text('Coming Soon!'),
           ],
@@ -304,9 +284,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.green.shade600,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.green.shade600),
             child: const Text(
               'Got it!',
               style: TextStyle(fontWeight: FontWeight.w600),

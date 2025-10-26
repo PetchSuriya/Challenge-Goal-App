@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 /// User model representing a user in the application
-/// 
+///
 /// This model handles user data serialization/deserialization and provides
 /// convenient methods for working with user information.
 class UserModel {
@@ -10,14 +10,14 @@ class UserModel {
   final String firstName;
   final String lastName;
   final String? phoneNumber;
-  
+
   /// URL ของรูปโปรไฟล์ (สำหรับรูปจาก server/API)
   final String? profileImageUrl;
-  
+
   /// Path ของรูปโปรไฟล์ที่เก็บใน local storage
   /// ใช้สำหรับรูปที่ user เลือกจากแกลเลอรี่หรือถ่ายด้วยกล้อง
   final String? profileImagePath;
-  
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -44,9 +44,9 @@ class UserModel {
   }
 
   /// Check if user has a profile image (either URL or local path)
-  bool get hasProfileImage => 
-    (profileImageUrl != null && profileImageUrl!.isNotEmpty) ||
-    (profileImagePath != null && profileImagePath!.isNotEmpty);
+  bool get hasProfileImage =>
+      (profileImageUrl != null && profileImageUrl!.isNotEmpty) ||
+      (profileImagePath != null && profileImagePath!.isNotEmpty);
 
   /// Get the effective profile image source (prefer local path over URL)
   String? get effectiveProfileImage => profileImagePath ?? profileImageUrl;
@@ -149,11 +149,11 @@ class UserModel {
   /// Safely parse DateTime from JSON value
   static DateTime _parseDateTime(dynamic dateValue) {
     if (dateValue == null) return DateTime.now();
-    
+
     if (dateValue is String) {
       return DateTime.tryParse(dateValue) ?? DateTime.now();
     }
-    
+
     return DateTime.now();
   }
 

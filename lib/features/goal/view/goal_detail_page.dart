@@ -126,7 +126,10 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             const SizedBox(width: 12),
             const Text(
               'Delete Goal',
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -143,7 +146,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.purple,
               side: const BorderSide(color: Colors.purple),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             child: const Text('Cancel'),
@@ -155,7 +160,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
@@ -206,7 +213,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 elevation: 2.5,
                 surfaceTintColor: Colors.white,
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -214,12 +223,20 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.black,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         category,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
                       ),
                     ],
                   ),
@@ -233,7 +250,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 elevation: 2.5,
                 surfaceTintColor: Colors.white,
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -243,12 +262,19 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                         children: [
                           const Text(
                             'Overall Progress',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
                           ),
                           const Spacer(),
                           Text(
                             '${(progress * 100).round()}%',
-                            style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                            ),
                           ),
                         ],
                       ),
@@ -256,9 +282,18 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                       // Your progress bar
                       Row(
                         children: [
-                          const Text('You', style: TextStyle(color: Colors.black)),
+                          const Text(
+                            'You',
+                            style: TextStyle(color: Colors.black),
+                          ),
                           const Spacer(),
-                          Text('${(progress * 100).round()}%', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                          Text(
+                            '${(progress * 100).round()}%',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -271,7 +306,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                             value: value,
                             minHeight: 10,
                             backgroundColor: Colors.grey.shade200,
-                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.purple),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Colors.purple,
+                            ),
                           ),
                         ),
                       ),
@@ -279,9 +316,18 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            Text(friendName, style: const TextStyle(color: Colors.black)),
+                            Text(
+                              friendName,
+                              style: const TextStyle(color: Colors.black),
+                            ),
                             const Spacer(),
-                            Text('${(friendProgress * 100).round()}%', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+                            Text(
+                              '${(friendProgress * 100).round()}%',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -294,7 +340,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                               value: value,
                               minHeight: 10,
                               backgroundColor: Colors.grey.shade200,
-                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.green,
+                              ),
                             ),
                           ),
                         ),
@@ -303,9 +351,18 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _StatChip(label: 'Completed', value: completed.toString()),
-                          _StatChip(label: 'Current Streak', value: currentStreak.toString()),
-                          _StatChip(label: 'Remaining', value: remaining.toString()),
+                          _StatChip(
+                            label: 'Completed',
+                            value: completed.toString(),
+                          ),
+                          _StatChip(
+                            label: 'Current Streak',
+                            value: currentStreak.toString(),
+                          ),
+                          _StatChip(
+                            label: 'Remaining',
+                            value: remaining.toString(),
+                          ),
                         ],
                       ),
                     ],
@@ -320,7 +377,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                 elevation: 2.5,
                 surfaceTintColor: Colors.white,
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -331,7 +390,11 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                       Expanded(
                         child: Text(
                           "Keep going! You’re on Day 12! Outstanding progress!",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                          ),
                         ),
                       ),
                     ],
@@ -342,24 +405,34 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
               const SizedBox(height: 12),
 
               // Streak Calendar
-              const Text('Streak Calendar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+              const Text(
+                'Streak Calendar',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.black,
+                ),
+              ),
               const SizedBox(height: 8),
               Card(
                 elevation: 2.5,
                 surfaceTintColor: Colors.white,
                 color: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   child: Column(
                     children: [
                       GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 1,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 7,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 1,
+                            ),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: totalDays,
@@ -381,7 +454,13 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           return CircleAvatar(
                             backgroundColor: bg,
                             foregroundColor: fg,
-                            child: Text('${index + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            child: Text(
+                              '${index + 1}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -389,13 +468,19 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _LegendDot(color: Colors.green.shade600, label: 'Done'),
+                          _LegendDot(
+                            color: Colors.green.shade600,
+                            label: 'Done',
+                          ),
                           const SizedBox(width: 16),
-                          _LegendDot(color: Colors.purple.shade600, label: 'Today'),
+                          _LegendDot(
+                            color: Colors.purple.shade600,
+                            label: 'Today',
+                          ),
                           const SizedBox(width: 16),
                           _LegendDot(color: Colors.grey, label: 'Not done'),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -420,7 +505,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                         foregroundColor: Colors.purple,
                         side: const BorderSide(color: Colors.purple),
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       child: const Text('Finish Goal'),
                     ),
@@ -438,7 +525,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                     backgroundColor: Colors.red,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
@@ -461,9 +550,23 @@ class _StatChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.black)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: Colors.black,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label, style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -500,7 +603,9 @@ class _GradientPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Colors.purple, Colors.pinkAccent]),
+        gradient: const LinearGradient(
+          colors: [Colors.purple, Colors.pinkAccent],
+        ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -516,11 +621,16 @@ class _GradientPrimaryButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: Text(
           label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
