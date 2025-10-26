@@ -4,6 +4,7 @@ import '../features/login/view/login_page.dart';
 import '../features/profile/view/profile_page.dart';
 import '../features/profile/view/reset_password_page.dart';
 import '../features/home/view/home_page.dart';
+import '../features/profile/view/costume_page.dart';
 import '../features/friends/view/friends_home_page.dart';
 import '../features/goal/view/goal_page.dart';
 import '../features/goal/view/goal_detail_page.dart';
@@ -36,7 +37,8 @@ class AppRoutes {
     redirect: (context, state) async {
       // ตรวจสอบว่าผู้ใช้กำลังเข้าถึงหน้าไหน
       final isLoginRoute = state.matchedLocation == AppConstants.loginRoute;
-      final isResetPasswordRoute = state.matchedLocation == AppConstants.resetPasswordRoute;
+      final isResetPasswordRoute =
+          state.matchedLocation == AppConstants.resetPasswordRoute;
 
       // อนุญาตให้เข้าถึงหน้า Login และ Reset Password ได้เสมอ (Public Routes)
       if (isLoginRoute || isResetPasswordRoute) return null;
@@ -98,6 +100,12 @@ class AppRoutes {
       ),
 
       GoRoute(
+        path: AppConstants.costumeRoute,
+        name: 'costume',
+        builder: (context, state) => const CostumePage(),
+      ),
+
+      GoRoute(
         path: AppConstants.friendRoute,
         name: 'friend',
         builder: (context, state) => const FriendPage(),
@@ -139,7 +147,9 @@ class AppRoutes {
             ElevatedButton(
               onPressed: () async {
                 final isLoggedIn = await _authService.isLoggedIn();
-                final destination = isLoggedIn ? AppConstants.homeRoute : AppConstants.loginRoute;
+                final destination = isLoggedIn
+                    ? AppConstants.homeRoute
+                    : AppConstants.loginRoute;
                 if (context.mounted) context.go(destination);
               },
               child: const Text('Go Home'),
