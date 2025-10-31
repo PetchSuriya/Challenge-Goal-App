@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Friends</title>
+    <style>
+      body{font-family:Arial, sans-serif; padding:16px}
+      .row{display:flex;gap:16px}
+      .list{flex:1}
+      .user{padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+      .avatarSmall{width:48px;height:48px;border-radius:50%;background:#eee;display:flex;align-items:center;justify-content:center;font-weight:bold}
+      #viewer{position:fixed;right:20px;top:20px;width:260px;border:1px solid #ccc;padding:12px;background:#fff;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.12);display:none}
+      #viewer h3{margin:0 0 8px}
+      .btn{padding:6px 10px;border-radius:6px;border:1px solid #888;background:#f7f7f7;cursor:pointer}
+    </style>
+  </head>
+  <body>
+    <h1>Friends</h1>
+    <div style="margin-bottom:12px">
+      <input id="searchInput" placeholder="Search username..." />
+      <button id="searchBtn" class="btn">Search</button>
+      <button id="backBtn" class="btn" style="margin-left:8px;">Back</button>
+    </div>
+    <div class="row">
+      <div class="list">
+        <h2>Friends</h2>
+        <div id="friendsList"></div>
+      </div>
+      <div class="list">
+        <h2>Requests</h2>
+        <div id="requestsList"></div>
+      </div>
+    </div>
+
+    <div id="viewer">
+      <h3 id="viewerName">Name</h3>
+      <div id="viewerAvatar">Avatar info</div>
+      <div style="margin-top:8px"><button id="viewerClose" class="btn">Close</button></div>
+    </div>
+
+    <script>
+      async function loadAll(){
+        try{
+          const res = await fetch('/api/friends');
+          if (!res.ok) { alert('Not authenticated'); location = '/login.html'; return; }
+          const obj = await res.json();
+          renderFriends(obj.friends||[]);
+          renderRequests(obj.pending||[]);
+        }catch(e){ console.error(e); }
+      }
+
+      function makeUserElem(u, showAccept=false){
+        const div = document.createElement('div');
+        div.className = 'user';
+        const av = document.createElement('div'); av.className='avatarSmall'; av.textContent = (u.username||'U').slice(0,1).toUpperCase();
+        const name = document.createElement('div'); name.textContent = u.username || 'Unknown';
+        div.appendChild(av); div.appendChild(name);
+        div.addEventListener('click', ()=> showUser(u.id));
+        if (showAccept){
+          const accept = document.createElement('button'); accept.textContent='Accept'; accept.className='btn';
+          accept.style.marginLeft='auto';
+          accept.addEventListener('click', async (e)=>{ e.stopPropagation(); await acceptRequest(u.id); loadAll(); });
+          div.appendChild(accept);
+        }
+        return div;
+      }
+
+      function renderFriends(list){
+        const wrap = document.getElementById('friendsList'); wrap.innerHTML='';
+        if (!list.length) { wrap.innerHTML = '<div class="empty">No friends</div>'; return; }
+          list.forEach(u=>{
+            const el = makeUserElem(u);
+            // add Unfriend button for friends list
+            const btn = document.createElement('button'); btn.className='btn'; btn.style.marginLeft='auto'; btn.textContent='Unfriend';
+            btn.addEventListener('click', async (e)=>{ e.stopPropagation(); if (!confirm('Unfriend '+(u.username||'user')+'?')) return; try{ await fetch('/api/friends/unfriend', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ friend_id: u.id }) }); loadAll(); } catch(err){ console.error(err); alert('Error'); } });
+            el.appendChild(btn);
+            wrap.appendChild(el);
+          });
+      }
+
+      function renderRequests(list){
+        const wrap = document.getElementById('requestsList'); wrap.innerHTML='';
+        if (!list.length) { wrap.innerHTML = '<div class="empty">No requests</div>'; return; }
+        list.forEach(u=> wrap.appendChild(makeUserElem(u, true)));
+      }
+
+      async function acceptRequest(userId){
+        try{
+          const res = await fetch('/api/friends/accept', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ friend_id: userId }) });
+          const j = await res.json();
+          if (!res.ok) alert(j.error||'Error');
+        }catch(e){ console.error(e); }
+      }
+
+      async function showUser(id){
+        try{
+          const res = await fetch('/api/user/' + id);
+          if (!res.ok) { alert('Unable to load user'); return; }
+          const u = await res.json();
+          document.getElementById('viewerName').textContent = u.username || 'User';
+          const avBox = document.getElementById('viewerAvatar'); avBox.innerHTML = '';
+          if (u.avatar && u.avatar.name){
+            const h = document.createElement('div'); h.textContent = 'Avatar: ' + (u.avatar.name || ''); avBox.appendChild(h);
+            if (u.avatar.equipped && u.avatar.equipped.head) {
+              const eq = document.createElement('div'); eq.textContent = 'Equipped head: ' + (u.avatar.equipped.head.name || ''); avBox.appendChild(eq);
+            }
+          } else {
+            avBox.textContent = 'No avatar';
+          }
+          document.getElementById('viewer').style.display = 'block';
+        }catch(e){ console.error(e); }
+      }
+
+      document.getElementById('viewerClose').addEventListener('click', ()=>{ document.getElementById('viewer').style.display='none'; });
+      document.getElementById('backBtn').addEventListener('click', ()=>{ location = '/hello'; });
+      document.getElementById('searchBtn').addEventListener('click', async ()=>{
+        const q = document.getElementById('searchInput').value.trim();
+        if (!q) return loadAll();
+        const res = await fetch('/api/friends/search?username=' + encodeURIComponent(q));
+        if (!res.ok) { alert('Search failed'); return; }
+        const rows = await res.json();
+        // show results in friendsList area with a "Add/Request" button
+        const wrap = document.getElementById('friendsList'); wrap.innerHTML = '';
+        rows.forEach(r=>{
+          const el = makeUserElem(r);
+          const btn = document.createElement('button'); btn.className='btn'; btn.style.marginLeft='auto';
+          if (r.status === 'accepted') btn.textContent = 'Friends';
+          else if (r.status === 'pending') btn.textContent = 'Requested';
+          else if (r.status === 'requested_by_them') btn.textContent = 'They requested';
+          else btn.textContent = 'Add';
+          btn.addEventListener('click', async (e)=>{ e.stopPropagation(); if (btn.textContent==='Add'){ await fetch('/api/friends/request', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ friend_id: r.id }) }); loadAll(); }});
+          el.appendChild(btn);
+          wrap.appendChild(el);
+        });
+      });
+
+      loadAll();
+    </script>
+  </body>
+</html>

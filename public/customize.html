@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Customize Avatar</title>
+    <style>
+      body { display:flex; flex-direction:column; align-items:center; font-family:Arial, sans-serif; }
+      #stage { width:600px; height:400px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; margin-top:20px; position:relative; }
+      #avatarBox { width:200px; height:300px; background:#eee; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+      #inventory { position:absolute; right:12px; bottom:12px; width:220px; height:200px; background:#fafafa; border:1px solid #ddd; padding:8px; overflow:auto; display:flex; gap:8px; flex-wrap:wrap; }
+      .item { width:48px; height:48px; background:#ddd; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .slotList { position:absolute; left:12px; bottom:12px; display:flex; gap:8px; }
+  .slot { width:60px; height:60px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; border:1px dashed #ccc; }
+    </style>
+  </head>
+  <body>
+    <h1>Customize Avatar</h1>
+    <div id="stage">
+      <div id="avatarBox">Avatar</div>
+      <div id="inventory"></div>
+      <div class="slotList">
+        <div class="slot" id="slot-head">Head</div>
+        <div class="slot" id="slot-body">Body</div>
+        <div class="slot" id="slot-hand">Hand</div>
+        <div class="slot" id="slot-accessory">Accessory</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;">
+      <a href="/hello">Back</a>
+      <button id="unequipAllBtn" style="margin-left:12px;">Unequip All</button>
+    </div>
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const avatarId = urlParams.get('avatar');
+      if (!avatarId) { alert('No avatar specified'); location='/hello'; }
+
+      async function loadInventory(){
+        const res = await fetch('/api/inventory');
+        if (!res.ok) return alert('Not authorized');
+        const inv = await res.json();
+        const invEl = document.getElementById('inventory');
+        invEl.innerHTML = '';
+        inv.forEach(it => {
+          const el = document.createElement('div');
+          el.className = 'item';
+          el.textContent = it.name;
+          el.dataset.itemId = it.item_id;
+          el.addEventListener('click', async ()=>{
+            // equip
+            await fetch('/api/avatar/' + avatarId + '/equip', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ item_id: Number(it.item_id) }) });
+            await refreshEquipped();
+          });
+          invEl.appendChild(el);
+        });
+      }
+
+      async function refreshEquipped(){
+        const res = await fetch('/api/avatar/' + avatarId + '/equipped');
+        if (!res.ok) return;
+        const data = await res.json();
+        // API returns { equipped: { head, body, hand, accessory }, accessory }
+        const main = data && data.equipped ? data.equipped : {};
+        const accessory = data && data.accessory ? data.accessory : null;
+        // clear slots
+        document.getElementById('slot-head').textContent = 'Head';
+        document.getElementById('slot-body').textContent = 'Body';
+        document.getElementById('slot-hand').textContent = 'Hand';
+        document.getElementById('slot-accessory').textContent = 'Accessory';
+        if (main.head && main.head.name) document.getElementById('slot-head').textContent = main.head.name;
+        if (main.body && main.body.name) document.getElementById('slot-body').textContent = main.body.name;
+        if (main.hand && main.hand.name) document.getElementById('slot-hand').textContent = main.hand.name;
+        if (accessory && accessory.name) document.getElementById('slot-accessory').textContent = accessory.name;
+      }
+
+      // initial
+      loadInventory();
+      refreshEquipped();
+
+      // load avatar info
+      async function loadAvatar(){
+        const res = await fetch('/api/avatar/' + avatarId);
+        if (!res.ok) return alert('Not authorized');
+        const av = await res.json();
+        const box = document.getElementById('avatarBox');
+        box.textContent = av.name || 'Avatar';
+        // show overlays for each equipped slot
+        if (av.equipped) {
+          if (av.equipped.head && av.equipped.head.name) {
+            const o = document.createElement('div');
+            o.style.position = 'absolute';
+            o.style.top = '8px';
+            o.style.right = '8px';
+            o.style.background = 'rgba(0,0,0,0.6)';
+            o.style.color = '#fff';
+            o.style.padding = '4px 6px';
+            o.style.borderRadius = '4px';
+            o.style.fontSize = '12px';
+            o.textContent = av.equipped.head.name;
+            box.appendChild(o);
+          }
+          if (av.equipped.hand && av.equipped.hand.name) {
+            const o2 = document.createElement('div');
+            o2.style.position = 'absolute';
+            o2.style.top = '8px';
+            o2.style.left = '8px';
+            o2.style.background = 'rgba(0,0,0,0.6)';
+            o2.style.color = '#fff';
+            o2.style.padding = '4px 6px';
+            o2.style.borderRadius = '4px';
+            o2.style.fontSize = '12px';
+            o2.textContent = av.equipped.hand.name;
+            box.appendChild(o2);
+          }
+          if (av.equipped.body && av.equipped.body.name) {
+            const o3 = document.createElement('div');
+            o3.style.position = 'absolute';
+            o3.style.bottom = '40px';
+            o3.style.left = '8px';
+            o3.style.background = 'rgba(0,0,0,0.6)';
+            o3.style.color = '#fff';
+            o3.style.padding = '4px 6px';
+            o3.style.borderRadius = '4px';
+            o3.style.fontSize = '12px';
+            o3.textContent = av.equipped.body.name;
+            box.appendChild(o3);
+          }
+        }
+        if (av.accessory && av.accessory.name) {
+          const acc = document.createElement('div');
+          acc.style.position = 'absolute';
+          acc.style.bottom = '16px';
+          acc.style.right = '16px';
+          acc.style.background = 'rgba(0,0,0,0.6)';
+          acc.style.color = '#fff';
+          acc.style.padding = '4px 6px';
+          acc.style.borderRadius = '4px';
+          acc.textContent = av.accessory.name;
+          box.appendChild(acc);
+        }
+      }
+
+      loadAvatar();
+
+      // unequip all button
+      document.getElementById('unequipAllBtn').addEventListener('click', async () => {
+        if (!confirm('Unequip all items from this avatar?')) return;
+        const btn = document.getElementById('unequipAllBtn');
+        btn.disabled = true;
+        try {
+          const res = await fetch('/api/avatar/' + avatarId + '/unequip', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ slot: 'all' }) });
+          if (!res.ok) {
+            const err = await res.json().catch(()=>({ error: 'Request failed' }));
+            alert('Unable to unequip: ' + (err && err.error ? err.error : res.statusText));
+          } else {
+            await refreshEquipped();
+            await loadAvatar();
+          }
+        } catch (e) {
+          console.error(e);
+          alert('Error unequipping items');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

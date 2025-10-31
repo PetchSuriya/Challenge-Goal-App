@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Goal Logs</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .log { border-bottom: 1px solid #eee; padding: 8px 0; }
+    label { display:block; margin-top:8px }
+    input, textarea { width:100%; padding:6px; }
+    button { margin-top:8px }
+  </style>
+</head>
+<body>
+  <a href="/goals">← Back to goals</a>
+  <h1 id="goalTitle">Goal</h1>
+  <div id="goalMeta" class="small"></div>
+
+  <h2>Logs</h2>
+  <div id="logs"></div>
+
+  <h3>Add Log</h3>
+  <form id="createLogForm">
+    <label>Date<input type="date" name="date" /></label>
+    <label>Description<textarea name="description" required></textarea></label>
+    <button type="submit">Submit Log</button>
+  </form>
+
+  <script>
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    const parts = location.pathname.split('/');
+    const goalId = parts[2];
+
+    async function fetchJSON(url, opts){ const r = await fetch(url, opts); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+    async function loadGoal(){
+      try {
+        const g = await fetchJSON('/api/goals/' + goalId);
+        document.getElementById('goalTitle').textContent = g.title;
+        document.getElementById('goalMeta').textContent = `Progress days: ${g.progress_days || 0} | Status: ${g.status || ''} | Started: ${g.start_date || ''}`;
+        // if this participant has completed the goal, disable the form for them only
+        if (g.completed) {
+          document.getElementById('createLogForm').querySelector('button[type="submit"]').disabled = true;
+          const note = document.createElement('div'); note.style.marginTop = '8px'; note.style.color = 'green';
+          note.textContent = 'You have completed this goal — no more logs allowed for you.';
+          document.getElementById('createLogForm').parentNode.insertBefore(note, document.getElementById('createLogForm'));
+        }
+      } catch (e) { console.error(e); alert('Failed to load goal'); }
+    }
+
+    async function loadLogs(){
+      try {
+        const logs = await fetchJSON('/api/goals/' + goalId + '/logs');
+        const container = document.getElementById('logs'); container.innerHTML = '';
+        if (!logs || logs.length === 0) container.innerHTML = '<p>No logs yet.</p>';
+        for (const l of logs) {
+          const d = document.createElement('div'); d.className = 'log';
+          d.innerHTML = `<div class="small">${l.date} — logged by user ${l.user_id}</div><div>${escapeHtml(l.description || '')}</div>`;
+          container.appendChild(d);
+        }
+      } catch (e) { console.error(e); alert('Failed to load logs'); }
+    }
+
+    document.getElementById('createLogForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const f = ev.target;
+      const data = { date: f.date.value || null, description: f.description.value };
+      try {
+        const res = await fetchJSON('/api/goals/' + goalId + '/logs', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        f.reset();
+        await loadGoal();
+        await loadLogs();
+        if (res && res.completed && res.reward) {
+          alert('Congratulations! You completed this goal and received: ' + (res.reward.name || 'an item'));
+        }
+      } catch (e) { console.error(e); alert('Failed to submit log'); }
+    });
+
+    loadGoal();
+    loadLogs();
+  </script>
+</body>
+</html>

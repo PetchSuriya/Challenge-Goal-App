@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Goals</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .goal { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+    .goal h3 { margin: 0 0 5px 0; }
+    .small { font-size: 0.9em; color: #666; }
+    label { display:block; margin-top:8px }
+    input, select, textarea { width:100%; padding:6px; }
+    button { margin-top:8px }
+  </style>
+</head>
+<body>
+  <h1>Your Goals</h1>
+  <div id="goals"></div>
+
+  <h2>Create a New Goal</h2>
+  <form id="createGoalForm">
+    <label>Title<input name="title" required /></label>
+    <label>Description<textarea name="description"></textarea></label>
+    <label>Duration (days)<input name="duration_days" name="duration_days" type="number" min="1" /></label>
+    <label>Category<input name="category" /></label>
+    <label>Type<select name="type"><option value="single">Individual</option><option value="group">Multiplayer</option></select></label>
+    <div id="friendSelect" style="display:none">
+      <label>Friend<select name="friend_id" id="friend_id"><option value="">-- choose friend --</option></select></label>
+      <small class="small">Only friends are shown here. Use the Friends page to add friends.</small>
+    </div>
+    <label>Start date<input type="date" name="start_date" /></label>
+    <button type="submit">Create Goal</button>
+  </form>
+
+  <script>
+    async function fetchJSON(url, opts) {
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function loadGoals() {
+      try {
+        const goals = await fetchJSON('/api/goals');
+        const container = document.getElementById('goals');
+        container.innerHTML = '';
+        if (!goals || goals.length === 0) container.innerHTML = '<p>No goals yet.</p>';
+        for (const g of goals) {
+          const el = document.createElement('div'); el.className = 'goal';
+          el.innerHTML = `<h3>${escapeHtml(g.title)} <small class="small">(${escapeHtml(g.status || '')})</small></h3>
+            <div class="small">Progress days: ${g.progress_days || 0} | Started: ${g.start_date || ''}</div>
+            <p>${escapeHtml(g.description || '')}</p>
+            <a href="/goals/${g.goal_id}/logs">View Logs &raquo;</a>`;
+          container.appendChild(el);
+        }
+      } catch (e) { console.error(e); alert('Failed to load goals'); }
+    }
+
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    document.getElementById('createGoalForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const f = ev.target;
+      const data = {
+        title: f.title.value,
+        description: f.description.value,
+        duration_days: f.duration_days.value ? Number(f.duration_days.value) : null,
+        category: f.category.value,
+        type: f.type.value,
+        friend_id: f.friend_id ? f.friend_id.value : null,
+        start_date: f.start_date.value || null
+      };
+      try {
+        await fetchJSON('/api/goals', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        f.reset();
+        toggleFriendSelect();
+        await loadGoals();
+      } catch (e) { console.error(e); alert('Failed to create goal'); }
+    });
+
+    // Toggle friend select for group goals and populate friends
+    async function toggleFriendSelect(){
+      const sel = document.getElementById('friendSelect');
+      const type = document.querySelector('select[name="type"]').value;
+      if (type === 'group') {
+        sel.style.display = 'block';
+        // populate friends
+        try {
+          const data = await fetch('/api/friends');
+          if (!data.ok) return;
+          const json = await data.json();
+          const friends = json.friends || [];
+          const select = document.getElementById('friend_id');
+          select.innerHTML = '<option value="">-- choose friend --</option>';
+          for (const f of friends) {
+            const o = document.createElement('option'); o.value = f.id; o.text = f.username; select.appendChild(o);
+          }
+        } catch (e) { console.error(e); }
+      } else {
+        sel.style.display = 'none';
+      }
+    }
+
+    document.querySelector('select[name="type"]').addEventListener('change', toggleFriendSelect);
+
+    // initial load
+    loadGoals();
+  </script>
+</body>
+</html>
