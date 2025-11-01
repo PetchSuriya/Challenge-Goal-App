@@ -20,6 +20,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
   String? _selectedGoalType; // เปลี่ยนเป็น nullable
   DateTimeRange? _selectedDateRange;
   List<String> _selectedFriends = [];
+  bool _showDateRangeError = false; // เพิ่ม flag สำหรับแสดง error
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Fitness', 'icon': Icons.fitness_center},
@@ -51,35 +52,34 @@ class _GoalFormPageState extends State<GoalFormPage> {
   }
 
   Future<void> _selectDateRange() async {
+    // ไม่ต้องตั้งค่าเริ่มต้น ให้ผู้ใช้เลือกเอง
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
-      initialDateRange: _selectedDateRange,
+      initialDateRange: _selectedDateRange, // ใช้ค่าที่เลือกไว้ หรือ null ถ้ายังไม่เคยเลือก
+      helpText: 'SELECT DATE RANGE (Minimum 7 days)',
+      saveText: 'SAVE',
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(
-                0xFFDA70D6,
-              ), // สีชมพู - วงกลมวันที่เริ่มต้น-สิ้นสุด
-              onPrimary: Colors.white, // ตัวหนังสือบนวันที่เลือก
-              secondary: Color(0xFFDA70D6), // สีชมพู
+              primary: Color(0xFFDA70D6),
+              onPrimary: Colors.white,
+              secondary: Color(0xFFDA70D6),
               onSecondary: Colors.white,
-              surface: Colors.white, // พื้นหลังปฏิทิน
-              onSurface: Colors.black87, // ตัวหนังสือทั่วไป
-              background: Colors.white, // พื้นหลังโดยรวม
+              surface: Colors.white,
+              onSurface: Colors.black87,
+              background: Colors.white,
               onBackground: Colors.black87,
-              primaryContainer: Color(0xFFFFC0E5), // เฟดสีชมพูอ่อนระหว่างวัน
-              onPrimaryContainer: Color(
-                0xFFD6006B,
-              ), // ตัวหนังสือในช่วงที่เลือก (ชมพูเข้ม)
-              surfaceVariant: Colors.white, // พื้นหลังส่วนอื่นๆ
+              primaryContainer: Color(0xFFFFC0E5),
+              onPrimaryContainer: Color(0xFFD6006B),
+              surfaceVariant: Colors.white,
               onSurfaceVariant: Colors.black87,
             ),
-            scaffoldBackgroundColor: Colors.white, // พื้นหลัง scaffold
-            canvasColor: Colors.white, // พื้นหลัง canvas
-            cardColor: Colors.white, // พื้นหลัง card
+            scaffoldBackgroundColor: Colors.white,
+            canvasColor: Colors.white,
+            cardColor: Colors.white,
             textTheme: const TextTheme(
               headlineMedium: TextStyle(
                 color: Colors.black87,
@@ -91,7 +91,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF7B68EE), // สีปุ่ม Cancel/SAVE
+                foregroundColor: const Color(0xFF7B68EE),
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -120,11 +120,14 @@ class _GoalFormPageState extends State<GoalFormPage> {
     );
 
     if (picked != null) {
+      final days = picked.end.difference(picked.start).inDays + 1;
+      
       setState(() {
         _selectedDateRange = picked;
-        // คำนวณจำนวนวัน
-        final days = picked.end.difference(picked.start).inDays + 1;
         _durationController.text = days.toString();
+        
+        // ตรวจสอบว่าน้อยกว่า 7 วันหรือไม่
+        _showDateRangeError = days < 7;
       });
     }
   }
@@ -627,22 +630,25 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                Row(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.calendar_today,
-                                        size: 20,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.calendar_today,
+                                            size: 20,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
                                       flex: 2,
                                       child: TextFormField(
                                         controller: _durationController,
@@ -667,13 +673,17 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                               ? 'days'
                                               : null,
                                           filled: true,
-                                          fillColor: Colors.grey.shade50,
+                                          fillColor: _showDateRangeError 
+                                              ? Colors.red.shade50 
+                                              : Colors.grey.shade50,
                                           border: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                             borderSide: BorderSide(
-                                              color: Colors.grey.shade300,
+                                              color: _showDateRangeError
+                                                  ? Colors.red
+                                                  : Colors.grey.shade300,
                                             ),
                                           ),
                                           enabledBorder: OutlineInputBorder(
@@ -681,15 +691,19 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                               12,
                                             ),
                                             borderSide: BorderSide(
-                                              color: Colors.grey.shade300,
+                                              color: _showDateRangeError
+                                                  ? Colors.red
+                                                  : Colors.grey.shade300,
                                             ),
                                           ),
                                           focusedBorder: OutlineInputBorder(
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Colors.purple,
+                                            borderSide: BorderSide(
+                                              color: _showDateRangeError
+                                                  ? Colors.red
+                                                  : Colors.purple,
                                               width: 2,
                                             ),
                                           ),
@@ -743,6 +757,22 @@ class _GoalFormPageState extends State<GoalFormPage> {
                                         ),
                                       ),
                                     ),
+                                      ],
+                                    ),
+                                    
+                                    // Error message for date range - แสดงด้านล่างช่อง Duration
+                                    if (_showDateRangeError)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 6.0, left: 44.0),
+                                        child: Text(
+                                          'Please select at least 7 days',
+                                          style: TextStyle(
+                                            color: Colors.red.shade700,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ],
@@ -1037,7 +1067,11 @@ class _GoalFormPageState extends State<GoalFormPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ElevatedButton(
-                        onPressed: _submitForm,
+                        onPressed: _showDateRangeError 
+                            ? () {
+                                // ไม่ทำอะไร - แค่ป้องกันไม่ให้ submit
+                              }
+                            : _submitForm,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
