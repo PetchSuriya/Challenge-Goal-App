@@ -18,6 +18,9 @@ class ApiConfig {
   static String get logoutEndpoint => '$baseUrl/api/logout';
   static String get meEndpoint => '$baseUrl/api/me';
   static String get registerEndpoint => '$baseUrl/api/register';
+  // Goals
+  static String goalsEndpoint() => '$baseUrl/api/goals';
+  static String goalLogsEndpoint(int goalId) => '$baseUrl/api/goals/$goalId/logs';
 
   // Timeout configurations
   static const Duration connectTimeout = Duration(seconds: 20);

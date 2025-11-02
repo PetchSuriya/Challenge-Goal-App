@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import 'goal_detail_page.dart';
 import 'goal_form_page.dart';
+import '../../../services/goal_service.dart';
 
 /// GoalPage - Redesigned to match login style with custom header, streak card, and goal list
 class GoalPage extends StatefulWidget {
@@ -14,6 +15,33 @@ class GoalPage extends StatefulWidget {
 
 class _GoalPageState extends State<GoalPage> {
   bool _showMutual = false;
+  final _goalService = GoalService();
+  bool _loading = true;
+  List<Map<String, dynamic>> _goals = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGoals();
+  }
+
+  Future<void> _loadGoals() async {
+    setState(() => _loading = true);
+    try {
+      final list = await _goalService.getGoals();
+      setState(() {
+        _goals = list;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load goals: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,10 +96,8 @@ class _GoalPageState extends State<GoalPage> {
                   context,
                   MaterialPageRoute(builder: (context) => const GoalFormPage()),
                 );
-
                 if (result != null) {
-                  // TODO: เพิ่ม goal ใหม่ลงในรายการ
-                  if (context.mounted) {
+                  if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Goal added successfully!'),
@@ -79,6 +105,7 @@ class _GoalPageState extends State<GoalPage> {
                       ),
                     );
                   }
+                  await _loadGoals();
                 }
               },
             ),
@@ -107,88 +134,53 @@ class _GoalPageState extends State<GoalPage> {
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  _showMutual ? '3 active' : '5 active',
-                  style: const TextStyle(color: Colors.black, fontSize: 14),
-                ),
+                if (_loading)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else
+                  Text(
+                    '${_goals.length} active',
+                    style: const TextStyle(color: Colors.black, fontSize: 14),
+                  ),
               ],
             ),
 
             const SizedBox(height: 12),
 
-            if (!_showMutual) ...[
-              _GoalCard(
-                title: 'Daily Workout',
-                category: 'Health',
-                icon: Icons.fitness_center,
-                themeColor: Colors.pinkAccent,
-                progress: 0.75,
-                durationText: '30 days goal',
-                streakText: '12 day streak',
-                completed: false,
+            if (_loading)
+              const SizedBox.shrink()
+            else if (_goals.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('No goals yet. Tap "Add Goal" to create one.', style: TextStyle(color: Colors.black)),
+              )
+            else
+              Column(
+                children: [
+                  for (final g in _goals)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _GoalCard(
+                        title: g['title'] ?? 'Untitled',
+                        category: g['type'] == 'group' ? 'Mutual' : (g['category'] ?? 'Personal'),
+                        icon: (g['type'] == 'group') ? Icons.groups_2_outlined : Icons.flag,
+                        themeColor: (g['type'] == 'group') ? Colors.deepPurple : Colors.purple,
+                        progress: _progressFrom(g),
+                        secondProgress: null,
+                        durationText: _durationTextFrom(g),
+                        streakText: _streakTextFrom(g),
+                        completed: (g['status'] == 'completed'),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 12),
-              _GoalCard(
-                title: 'Read 30 Minutes',
-                category: 'Learning',
-                icon: Icons.book_outlined,
-                themeColor: Colors.blueAccent,
-                progress: 0.4,
-                durationText: '30 days goal',
-                streakText: '5 day streak',
-                completed: false,
-              ),
-              const SizedBox(height: 12),
-              _GoalCard(
-                title: 'Meditation',
-                category: 'Mindfulness',
-                icon: Icons.favorite_outline,
-                themeColor: Colors.green,
-                progress: 0.9,
-                durationText: '30 days goal',
-                streakText: '20 day streak',
-                completed: false,
-              ),
-            ] else ...[
-              _GoalCard(
-                title: 'Workout Buddies Challenge',
-                category: 'Mutual • Health',
-                icon: Icons.groups_2_outlined,
-                themeColor: Colors.deepPurple,
-                progress: 0.6,
-                secondProgress: 0.55,
-                secondLabel: 'Friend',
-                durationText: '30 days goal',
-                streakText: '8 day streak',
-                completed: false,
-              ),
-              const SizedBox(height: 12),
-              _GoalCard(
-                title: 'Read Together',
-                category: 'Mutual • Learning',
-                icon: Icons.groups,
-                themeColor: Colors.teal,
-                progress: 0.35,
-                secondProgress: 0.4,
-                secondLabel: 'Friend',
-                durationText: '21 days goal',
-                streakText: '3 day streak',
-                completed: false,
-              ),
-              const SizedBox(height: 12),
-              _GoalCard(
-                title: 'Morning Meditation Group',
-                category: 'Mutual • Mindfulness',
-                icon: Icons.group_work_outlined,
-                themeColor: Colors.orange,
-                progress: 0.8,
-                secondProgress: 0.72,
-                secondLabel: 'Friend',
-                durationText: '14 days goal',
-                streakText: '10 day streak',
-                completed: false,
-              ),
-            ],
           ],
         ),
       ),
@@ -205,7 +197,6 @@ class _GoalCard extends StatelessWidget {
   final Color themeColor;
   final double progress; // 0.0 - 1.0
   final double? secondProgress; // friend/other progress for mutual goals
-  final String secondLabel;
   final String durationText;
   final String streakText;
   final bool completed;
@@ -217,7 +208,6 @@ class _GoalCard extends StatelessWidget {
     required this.themeColor,
     required this.progress,
     this.secondProgress,
-    this.secondLabel = 'Friend',
     required this.durationText,
     required this.streakText,
     required this.completed,
@@ -233,8 +223,7 @@ class _GoalCard extends StatelessWidget {
         final streak = _extractFirstInt(streakText) ?? 0;
         final isMutual =
             secondProgress != null || category.toLowerCase().contains('mutual');
-        final friendCompletedApprox = ((secondProgress ?? 0) * totalDays)
-            .round();
+        final friendCompletedApprox = ((secondProgress ?? 0) * totalDays).round();
         final args = GoalDetailArgs(
           title: title,
           category: category,
@@ -242,7 +231,7 @@ class _GoalCard extends StatelessWidget {
           completed: completedApprox,
           currentStreak: streak,
           isMutual: isMutual,
-          friendName: secondLabel,
+          friendName: 'Friend',
           friendCompleted: friendCompletedApprox,
         );
         if (context.mounted) {
@@ -374,7 +363,7 @@ class _GoalCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      secondLabel,
+                      'Friend',
                       style: const TextStyle(color: Colors.black),
                     ),
                     const Spacer(),
@@ -573,4 +562,25 @@ class _GradientActionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+double _progressFrom(Map<String, dynamic> g) {
+  final int prog = (g['progress_days'] is int) ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
+  int? dur = g['duration_days'] is int ? g['duration_days'] as int : int.tryParse('${g['duration_days'] ?? ''}');
+  dur ??= _extractFirstInt('${g['duration'] ?? ''}');
+  if (dur == null || dur == 0) return 0;
+  final v = prog / dur;
+  if (v < 0) return 0; if (v > 1) return 1; return v;
+}
+
+String _durationTextFrom(Map<String, dynamic> g) {
+  if (g['duration'] is String && (g['duration'] as String).isNotEmpty) return g['duration'];
+  final d = g['duration_days'];
+  if (d is int && d > 0) return '$d days goal';
+  return 'Goal';
+}
+
+String _streakTextFrom(Map<String, dynamic> g) {
+  final int prog = (g['progress_days'] is int) ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
+  return '$prog day streak';
 }
