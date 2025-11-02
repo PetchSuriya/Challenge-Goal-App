@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../core/config/api_config.dart';
+import '../../services/api_client.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,6 +16,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
@@ -25,21 +27,21 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   String _selectedCountryCode = '+66';
+  String _gender = 'other';
 
-  // TODO: เปลี่ยนเป็น endpoint จริงของคุณ
-  final String _registerUrl = 'https://example.com/api/register';
   late final Dio _dio;
 
   @override
   void initState() {
     super.initState();
-    _dio = Dio();
+    _dio = ApiClient().dio;
   }
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+  _usernameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _dobController.dispose();
@@ -80,17 +82,28 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Convert DD/MM/YYYY -> YYYY-MM-DD
+      String formatDob(String s) {
+        final parts = s.split('/');
+        if (parts.length == 3) {
+          final d = parts[0].padLeft(2, '0');
+          final m = parts[1].padLeft(2, '0');
+          final y = parts[2];
+          return '$y-$m-$d';
+        }
+        return s;
+      }
+
       final body = {
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': '$_selectedCountryCode${_phoneController.text.trim()}',
-        'date_of_birth': _dobController.text,
+        'username': _usernameController.text.trim(),
         'password': _passwordController.text,
+        'email': _emailController.text.trim(),
+        'gender': _gender,
+        'birthday': formatDob(_dobController.text.trim()),
       };
 
       final response = await _dio.post(
-        _registerUrl,
+        ApiConfig.registerEndpoint,
         data: body,
         options: Options(
           headers: {
@@ -103,41 +116,31 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = response.data;
-        final token = data['token'] as String?;
-
-        if (token != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('auth_token', token);
-
-          if (!mounted) return;
-
-          // แสดงข้อความสำเร็จ
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 12),
-                  Text(
-                    'สมัครสมาชิกสำเร็จ!',
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.all(16),
+        // แสดงข้อความสำเร็จ
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text(
+                  'สมัครสมาชิกสำเร็จ!',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
-          );
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
 
-          // ไปยังหน้า Login หลังสมัครสำเร็จ
-          await Future.delayed(const Duration(seconds: 1));
-          if (mounted) context.go('/login');
-        }
+        // ไปยังหน้า Login หลังสมัครสำเร็จ
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) context.go('/login');
       }
     } on DioException catch (e) {
       if (!mounted) return;
@@ -204,6 +207,12 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = value.trim();
     final reg = RegExp(r"^[^@\s]+@[^@\s]+\.[^@\s]+");
     if (!reg.hasMatch(email)) return 'รูปแบบอีเมลไม่ถูกต้อง';
+    return null;
+  }
+
+  String? _validateUsername(String? value) {
+    if (value == null || value.trim().isEmpty) return 'กรุณากรอกชื่อผู้ใช้';
+    if (value.trim().length < 3) return 'ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร';
     return null;
   }
 
@@ -335,6 +344,16 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Username
+          CustomTextField(
+            controller: _usernameController,
+            labelText: 'Username',
+            hintText: 'Enter a unique username',
+            prefixIcon: Icon(Icons.person_outline, color: Colors.grey.shade600),
+            validator: _validateUsername,
+          ),
+          const SizedBox(height: 20),
+
           // First Name
           CustomTextField(
             controller: _firstNameController,
@@ -379,6 +398,43 @@ class _RegisterPageState extends State<RegisterPage> {
             prefixIcon: Icon(Icons.calendar_today, color: Colors.grey.shade600),
             onTap: _selectDateOfBirth,
             validator: _validateDateOfBirth,
+          ),
+          const SizedBox(height: 20),
+
+          // Gender
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Gender',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _gender,
+                    items: const [
+                      DropdownMenuItem(value: 'male', child: Text('Male')),
+                      DropdownMenuItem(value: 'female', child: Text('Female')),
+                      DropdownMenuItem(value: 'other', child: Text('Other')),
+                    ],
+                    onChanged: (val) {
+                      setState(() { _gender = val ?? 'other'; });
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
 
