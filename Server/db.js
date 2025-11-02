@@ -37,6 +37,7 @@ createSchema(db).then(() => {
     try {
       const cols = await all("PRAGMA table_info('goals')");
       const names = (cols || []).map(c => c.name);
+      if (!names.includes('goal_picture')) await run("ALTER TABLE goals ADD COLUMN goal_picture TEXT");
       if (!names.includes('duration_days')) await run("ALTER TABLE goals ADD COLUMN duration_days INTEGER");
       if (!names.includes('reward_item_id')) await run("ALTER TABLE goals ADD COLUMN reward_item_id INTEGER");
       if (!names.includes('completed_at')) await run("ALTER TABLE goals ADD COLUMN completed_at TEXT");
@@ -142,15 +143,15 @@ async function getNotesByUser(userId) {
 }
 
 // --- Goals / Goal logs helpers ---
-async function createGoal(userId, title, description = null, duration = null, durationDays = null, category = null, type = 'single', friendId = null, startDate = null) {
+async function createGoal(userId, title, description = null, duration = null, durationDays = null, category = null, type = 'single', friendId = null, startDate = null, goalPicture = null) {
   // If this is a group goal with a single friend selected, create separate goal rows for each collaborator
   // so each user has their own goal record and progress. This avoids blocking other collaborators when one completes.
   try {
     // create the goal for the requesting user
     const res = await run(
-      `INSERT INTO goals (user_id, title, description, duration, category, type, friend_id, status, start_date, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-      [userId, title, description, duration, category, type, friendId, 'ongoing', startDate]
+      `INSERT INTO goals (user_id, title, description, duration, category, type, friend_id, status, start_date, goal_picture, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [userId, title, description, duration, category, type, friendId, 'ongoing', startDate, goalPicture]
     );
     const goalId = res.lastID;
     if (durationDays) {
@@ -167,9 +168,9 @@ async function createGoal(userId, title, description = null, duration = null, du
     if (type === 'group' && friendId && friendId !== userId) {
       try {
         const res2 = await run(
-          `INSERT INTO goals (user_id, title, description, duration, category, type, friend_id, status, start_date, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-          [friendId, title, description, duration, category, type, userId, 'ongoing', startDate]
+          `INSERT INTO goals (user_id, title, description, duration, category, type, friend_id, status, start_date, goal_picture, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+          [friendId, title, description, duration, category, type, userId, 'ongoing', startDate, goalPicture]
         );
         const friendGoalId = res2.lastID;
         if (durationDays) {
@@ -182,7 +183,7 @@ async function createGoal(userId, title, description = null, duration = null, du
         console.error('failed to create friend copy of group goal', e && e.message ? e.message : e);
       }
     }
-    return { goal_id: goalId, user_id: userId, title, description, duration, category, type, friend_id: friendId, status: 'ongoing', start_date: startDate };
+  return { goal_id: goalId, user_id: userId, title, description, duration, category, type, friend_id: friendId, status: 'ongoing', start_date: startDate, goal_picture: goalPicture };
   } catch (e) {
     console.error('createGoal error', e && e.message ? e.message : e);
     throw e;

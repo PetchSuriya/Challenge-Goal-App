@@ -305,11 +305,23 @@ app.get('/api/goals', requireAuth, async (req, res) => {
 
 app.post('/api/goals', requireAuth, async (req, res) => {
   try {
-    const { title, description, duration, duration_days, category, type, friend_id, start_date } = req.body;
+    const { title, description, duration, duration_days, category, type, friend_id, start_date, goal_picture, picture } = req.body;
     if (!title) return res.status(400).json({ error: 'Missing title' });
     const friendId = friend_id ? Number(friend_id) : null;
     const durDays = duration_days ? Number(duration_days) : null;
-    const goal = await dbModule.createGoal(req.session.user.id, title, description, duration, durDays, category, type || 'single', friendId, start_date);
+    const goalPic = goal_picture || picture || null;
+    const goal = await dbModule.createGoal(
+      req.session.user.id,
+      title,
+      description,
+      duration,
+      durDays,
+      category,
+      type || 'single',
+      friendId,
+      start_date,
+      goalPic
+    );
     res.json(goal);
   } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
 });

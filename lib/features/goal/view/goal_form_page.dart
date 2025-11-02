@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../services/goal_service.dart';
 import 'dart:io';
 
 /// GoalFormPage - หน้าฟอร์มสำหรับสร้างเป้าหมายใหม่
@@ -424,15 +425,36 @@ class _GoalFormPageState extends State<GoalFormPage> {
         return;
       }
 
-      // TODO: ส่งข้อมูลไปบันทึก
-      Navigator.pop(context, {
-        'title': _titleController.text,
-        'duration': int.parse(_durationController.text),
-        'category': _selectedCategory,
-        'goalType': _selectedGoalType,
-        'dateRange': _selectedDateRange,
-        'friends': _selectedFriends,
-        'image': _selectedImage,
+      // Call backend to create the goal
+      final svc = GoalService();
+      final days = int.tryParse(_durationController.text);
+      final type = _selectedGoalType == 'Mutual' ? 'group' : 'single';
+      final start = _selectedDateRange?.start;
+      final durationText = days != null ? '$days days' : null;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+      svc
+          .createGoal(
+            title: _titleController.text,
+            durationDays: days,
+            durationText: durationText,
+            category: _selectedCategory,
+            type: type,
+            startDate: start,
+            // goalPicture: not uploaded yet; can be added later when upload supported
+          )
+          .then((goal) {
+        Navigator.of(context).pop(); // close progress
+        Navigator.pop(context, goal);
+      }).catchError((e) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add goal: $e')),
+        );
       });
     }
   }

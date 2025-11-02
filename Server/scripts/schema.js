@@ -62,6 +62,7 @@ module.exports = async function createSchema(db) {
       user_id INTEGER NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
+      goal_picture TEXT,
       duration TEXT,
       category TEXT,
       type TEXT,
