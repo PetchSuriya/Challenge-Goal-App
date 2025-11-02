@@ -815,19 +815,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
             ),
           ] else ...[
+            // Subscription is inactive (e.g., cancelled or expired) — allow selecting other plans
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _reactivateSubscription(),
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Reactivate'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildUpgradeButton(
+                    'Premium Plan',
+                    '\$9.99/month',
+                    'Unlimited goals, advanced analytics, priority support',
+                    Colors.blue,
+                    () => _upgradeToPlan('premium'),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  _buildUpgradeButton(
+                    'Pro Plan',
+                    '\$19.99/month',
+                    'Everything in Premium + team collaboration, API access',
+                    Colors.purple,
+                    () => _upgradeToPlan('pro'),
+                  ),
+                ],
               ),
             ),
           ],

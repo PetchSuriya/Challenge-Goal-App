@@ -28,11 +28,13 @@ class FriendPage extends StatefulWidget {
 class _FriendPageState extends State<FriendPage> {
   // Friends list state
   late List<Friend> _friends;
+  late List<Friend> _incomingRequests;
 
   @override
   void initState() {
     super.initState();
     _initializeFriends();
+    _initializeIncomingRequests();
   }
 
   void _initializeFriends() {
@@ -48,6 +50,132 @@ class _FriendPageState extends State<FriendPage> {
             : 'Offline',
         goals: (i + 1) * 2,
       ),
+    );
+  }
+
+  void _initializeIncomingRequests() {
+    // Sample incoming requests - replace with API data as needed
+    _incomingRequests = [
+      Friend(id: 'req_1', name: 'Sam Carter', status: 'Offline', goals: 2),
+      Friend(id: 'req_2', name: 'Priya Singh', status: 'Offline', goals: 1),
+    ];
+  }
+
+  void _showIncomingRequests() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (c, setState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [Colors.blue.shade200, Colors.purple.shade100]),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.person_add, color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text('People who added you', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+                ),
+                if (_incomingRequests.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text('${_incomingRequests.length} requests', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600)),
+                  ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: _incomingRequests.isEmpty
+                  ? Text('No incoming friend requests', style: TextStyle(color: Colors.black87))
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      itemBuilder: (context, index) {
+                        final req = _incomingRequests[index];
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.purple.shade100,
+                              child: Text(req.name[0], style: TextStyle(color: Colors.purple.shade700, fontWeight: FontWeight.bold)),
+                            ),
+                            title: Text(req.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
+                            subtitle: Text('${req.goals} goals', style: TextStyle(color: Colors.black54)),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    // Accept: add to friends
+                                    setState(() {
+                                      _friends.add(req);
+                                      _incomingRequests.removeWhere((r) => r.id == req.id);
+                                    });
+                                    Navigator.of(ctx).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Accepted ${req.name}')),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue.shade600,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
+                                  child: const Text('Accept'),
+                                ),
+                                const SizedBox(width: 8),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    // Decline
+                                    setState(() {
+                                      _incomingRequests.removeWhere((r) => r.id == req.id);
+                                    });
+                                    Navigator.of(ctx).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Declined ${req.name}')),
+                                    );
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red.shade600,
+                                    side: BorderSide(color: Colors.red.shade100),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('Decline'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                      separatorBuilder: (_, __) => const SizedBox(height: 6),
+                      itemCount: _incomingRequests.length,
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Close'),
+                style: TextButton.styleFrom(foregroundColor: Colors.black87),
+              ),
+            ],
+          );
+        });
+      },
     );
   }
 
@@ -93,6 +221,142 @@ class _FriendPageState extends State<FriendPage> {
     );
   }
 
+  void _onAddFriend() {
+    final rootCtx = context;
+    final TextEditingController _searchCtrl = TextEditingController();
+    List<Friend> results = [];
+
+    showDialog(
+      context: rootCtx,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            void doSearch() {
+              final q = _searchCtrl.text.trim().toLowerCase();
+              setState(() {
+                if (q.isEmpty) {
+                  results = [];
+                } else {
+                  results = _friends.where((f) => f.name.toLowerCase().contains(q)).toList();
+                }
+              });
+            }
+
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              title: const Text(
+                'Find a friend',
+                // Dialog title remains semibold but color applied below for clarity
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _searchCtrl,
+                    autofocus: true,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Type a friend name',
+                      filled: true,
+                      fillColor: Colors.blue.shade50,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.blue.shade300),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.search, color: Colors.blue.shade600),
+                        onPressed: doSearch,
+                      ),
+                    ),
+                    onSubmitted: (_) => doSearch(),
+                  ),
+                  const SizedBox(height: 12),
+                  if (results.isEmpty)
+                    Container(
+                      alignment: Alignment.centerLeft,
+                      child: Text('No results', style: TextStyle(color: Colors.black87)),
+                    )
+                  else
+                    SizedBox(
+                      height: 220,
+                      width: double.maxFinite,
+                      child: ListView.builder(
+                        itemCount: results.length,
+                        itemBuilder: (c, i) {
+                          final f = results[i];
+                          return Card(
+                            color: Colors.blue.shade50,
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.purple.shade100,
+                                child: Text(
+                                  f.name[0],
+                                  style: TextStyle(color: Colors.purple.shade700, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              title: Text(
+                                f.name,
+                                style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Text(
+                                '${f.goals} goals',
+                                style: TextStyle(color: Colors.blueGrey.shade700),
+                              ),
+                              onTap: () {
+                                Navigator.of(dialogCtx).pop();
+                                ScaffoldMessenger.of(rootCtx).showSnackBar(
+                                  SnackBar(content: Text('Selected ${f.name}')),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  child: const Text('Cancel'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.black87),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Close this dialog then show incoming requests
+                    Navigator.of(dialogCtx).pop();
+                    _showIncomingRequests();
+                  },
+                  child: const Text('Requests'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.blueGrey),
+                ),
+                TextButton(
+                  onPressed: () {
+                    doSearch();
+                  },
+                  child: const Text('Search'),
+                  style: TextButton.styleFrom(foregroundColor: Colors.blueAccent),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,63 +365,24 @@ class _FriendPageState extends State<FriendPage> {
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 1,
-        leadingWidth: 220,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go(AppConstants.dashboardRoute),
-              ),
-              const SizedBox(width: 4),
-              TextButton.icon(
-                onPressed: () {
-                  // TODO: Implement friend search or add friend functionality
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.black87,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.person_add_outlined),
-                label: const Text('Add Friend'),
-              ),
-            ],
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go(AppConstants.dashboardRoute),
+          color: Colors.black87,
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: _GradientActionButton(
-              icon: Icons.search,
-              label: 'Search',
-              onPressed: () {
-                // TODO: Implement friend search functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Friend search feature coming soon!'),
-                    backgroundColor: Colors.blue,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+        // Search removed; Add Friend moved into the Friends Overview card
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Friends Summary Card
+            // Friends Summary Card (Add Friend button moved here)
             _FriendsSummaryCard(
               totalFriends: _friends.length,
               activeFriends: _friends.where((f) => f.status == 'Active').length,
               mutualGoals: _friends.fold(0, (sum, f) => sum + f.goals),
+              onAdd: _onAddFriend,
             ),
 
             const SizedBox(height: 16),
@@ -168,7 +393,7 @@ class _FriendPageState extends State<FriendPage> {
               children: [
                 const Text(
                   'Your Friends',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
                 ),
                 TextButton.icon(
                   onPressed: () {
@@ -276,6 +501,7 @@ class _FriendPageState extends State<FriendPage> {
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
+                          color: Colors.black,
                         ),
                       ),
                       Text(
@@ -290,33 +516,6 @@ class _FriendPageState extends State<FriendPage> {
                 ),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: friend.status == 'Active'
-                            ? Colors.green.shade100
-                            : friend.status == 'Away'
-                            ? Colors.orange.shade100
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        friend.status,
-                        style: TextStyle(
-                          color: friend.status == 'Active'
-                              ? Colors.green.shade700
-                              : friend.status == 'Away'
-                              ? Colors.orange.shade700
-                              : Colors.grey.shade700,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     IconButton(
                       onPressed: () =>
                           _showDeleteConfirmation(friend.name, friend.id),
@@ -346,11 +545,13 @@ class _FriendsSummaryCard extends StatelessWidget {
   final int totalFriends;
   final int activeFriends;
   final int mutualGoals;
+  final VoidCallback? onAdd;
 
   const _FriendsSummaryCard({
     required this.totalFriends,
     required this.activeFriends,
     required this.mutualGoals,
+    this.onAdd,
   });
 
   @override
@@ -388,12 +589,25 @@ class _FriendsSummaryCard extends StatelessWidget {
                 child: const Icon(Icons.people, color: Colors.white),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Friends Overview',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
               ),
+              if (onAdd != null) ...[
+                ElevatedButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.person_add_alt_1, size: 18),
+                  label: const Text('Add Friend'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 6,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 20),
@@ -449,7 +663,7 @@ class _StatItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: color,
+            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 4),
@@ -457,7 +671,7 @@ class _StatItem extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: Colors.black54,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -466,55 +680,3 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _GradientActionButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final IconData icon;
-  final String label;
-
-  const _GradientActionButton({
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade600, Colors.purple.shade600],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 18),
-        label: Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            fontSize: 14,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
-  }
-}
