@@ -1,6 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../features/profile/model/user_model.dart';
 import '../core/constants/app_constants.dart';
+import '../core/config/api_config.dart';
+import 'api_client.dart';
 
 /// Result classes for better error handling and type safety
 
@@ -57,14 +60,16 @@ class AuthService {
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
+  final Dio _http = ApiClient().dio;
 
   // Storage keys
   static const String _tokenKey = AppConstants.accessTokenKey;
   static const String _userDataKey = AppConstants.userDataKey;
 
   // Mock credentials for development
-  static const List<Map<String, String>> _validCredentials =
-      AppConstants.mockCredentials;
+  // Mock credentials for development
+  // static const List<Map<String, String>> _validCredentials =
+  //     AppConstants.mockCredentials;
 
   /// Initialize the service (call this at app startup)
   Future<void> initialize() async {
@@ -81,31 +86,41 @@ class AuthService {
   }
 
   /// Authenticate user with email and password
-  Future<LoginResult> login(String email, String password) async {
+  Future<LoginResult> login(String identifier, String password) async {
     await _ensureInitialized();
 
     try {
-      print('AuthService: Attempting login with email: $email');
+      print('AuthService: Attempting login with: $identifier');
 
       // Validate input
-      final validationError = _validateLoginInput(email, password);
+      final validationError = _validateLoginInput(identifier, password);
       if (validationError != null) {
         return LoginResult.failure(validationError);
       }
 
-      // Check credentials
-      if (!_isValidCredentials(email, password)) {
-        return LoginResult.failure(_getInvalidCredentialsMessage());
+
+
+
+      // Server expects { username, password }
+      final body = {
+        'username': identifier.trim(),
+        'password': password,
+      };
+
+      final res = await _http.post(ApiConfig.loginEndpoint, data: body);
+      if (res.statusCode != 200) {
+        final msg = _extractError(res) ?? 'Login failed (code ${res.statusCode})';
+        return LoginResult.failure(msg);
       }
 
-      // Simulate API delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Create user and save session
-      final user = _createMockUser(email);
+      // Fetch current user using session cookie stored by CookieManager
+      final meRes = await _http.get(ApiConfig.meEndpoint);
+      if (meRes.statusCode != 200 || meRes.data == null) {
+        final msg = _extractError(meRes) ?? 'Failed to load profile';
+        return LoginResult.failure(msg);
+      }
+      final user = _mapServerUserToModel(meRes.data);
       await _saveUserSession(user);
-
-      print('AuthService: Login successful!');
       return LoginResult.success(user);
     } catch (e) {
       print('AuthService: Login error - $e');
@@ -118,12 +133,17 @@ class AuthService {
     await _ensureInitialized();
 
     try {
-      final storedUser = await getUserData();
-      if (storedUser != null) {
-        return ProfileResult.success(storedUser);
-      } else {
-        return const ProfileResult.failure('No user data found');
+      // Try fresh from server using session cookie
+      final res = await _http.get(ApiConfig.meEndpoint);
+      if (res.statusCode == 200 && res.data != null) {
+        final user = _mapServerUserToModel(res.data);
+        await saveUserData(user);
+        return ProfileResult.success(user);
       }
+      // Fallback to cached
+      final storedUser = await getUserData();
+      if (storedUser != null) return ProfileResult.success(storedUser);
+      return const ProfileResult.failure('No user data found');
     } catch (e) {
       return ProfileResult.failure('Failed to load profile: ${e.toString()}');
     }
@@ -179,7 +199,10 @@ class AuthService {
   Future<void> saveAccessToken(String token) async {
     await _ensureInitialized();
     await _prefs?.setString(_tokenKey, token);
-    print('Token saved: ${token.substring(0, 20)}...');
+    // Avoid RangeError if token shorter than preview length
+    final previewLen = token.length < 8 ? token.length : 8;
+    final preview = token.substring(0, previewLen);
+    print('Token saved (${token.length} chars): $preview...');
   }
 
   /// Remove access token
@@ -232,8 +255,11 @@ class AuthService {
     await _ensureInitialized();
 
     try {
+      // Best-effort server logout
+      try { await _http.post(ApiConfig.logoutEndpoint); } catch (_) {}
       await removeAccessToken();
       await removeUserData();
+      await ApiClient().clearCookies();
       print('User logged out successfully');
     } catch (e) {
       print('Error during logout: $e');
@@ -249,48 +275,40 @@ class AuthService {
     }
   }
 
-  String? _validateLoginInput(String email, String password) {
-    if (email.trim().isEmpty || password.trim().isEmpty) {
+  String? _validateLoginInput(String identifier, String password) {
+    if (identifier.trim().isEmpty || password.trim().isEmpty) {
       return AppConstants.emailRequired;
     }
     return null;
   }
 
-  bool _isValidCredentials(String email, String password) {
-    final normalizedEmail = email.trim().toLowerCase();
-    final normalizedPassword = password.trim();
-
-    return _validCredentials.any(
-      (cred) =>
-          cred['email']!.toLowerCase() == normalizedEmail &&
-          cred['password'] == normalizedPassword,
-    );
-  }
-
-  String _getInvalidCredentialsMessage() {
-    return 'Invalid credentials!\n\nTry one of these:\n'
-        '• admin@bento.app / Bento2025!\n'
-        '• test@test.com / 123456\n'
-        '• admin / admin';
-  }
-
-  UserModel _createMockUser(String email) {
-    final now = DateTime.now();
+  // Map server user to app model
+  UserModel _mapServerUserToModel(dynamic data) {
+    final created = data['created_at']?.toString();
+    final createdAt = DateTime.tryParse(created ?? '') ?? DateTime.now();
     return UserModel(
-      id: 'user_${now.millisecondsSinceEpoch}',
-      email: email.trim(),
-      firstName: 'Admin',
-      lastName: 'User',
-      phoneNumber: '+66-1234-5678',
-      profileImageUrl: null,
-      createdAt: now,
-      updatedAt: now,
+      id: (data['id']?.toString() ?? ''),
+      email: (data['email']?.toString() ?? ''),
+      firstName: (data['username']?.toString() ?? ''),
+      lastName: '',
+      phoneNumber: null,
+      profileImageUrl: data['profile_picture']?.toString(),
+      createdAt: createdAt,
+      updatedAt: createdAt,
     );
+  }
+
+  String? _extractError(Response res) {
+    try {
+      final d = res.data;
+      if (d is Map && d['error'] is String) return d['error'] as String;
+    } catch (_) {}
+    return null;
   }
 
   Future<void> _saveUserSession(UserModel user) async {
-    final token = 'bento_token_${DateTime.now().millisecondsSinceEpoch}';
-    await saveAccessToken(token);
+    // We store a marker token so existing app logic works; session cookie is in CookieJar
+    await saveAccessToken('session_cookie');
     await saveUserData(user);
   }
 }

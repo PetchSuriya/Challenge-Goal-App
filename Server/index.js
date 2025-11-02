@@ -4,19 +4,31 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const cors = require('cors');
 
 const DB_PATH = path.join(__dirname, 'data.db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+// Allow Flutter Web dev server (localhost ports) and 127.0.0.1 with credentials
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // non-CORS or same-origin
+    const ok = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    return callback(ok ? null : new Error('Not allowed by CORS'), ok);
+  },
+  credentials: true,
+}));
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(session({
   secret: 'dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }
+  // For local dev: allow cookies to be sent on same-site requests from localhost dev ports
+  cookie: { secure: false, sameSite: 'lax' }
 }));
 
 // Serve public files
@@ -69,9 +81,16 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Missing username or password' });
-    const row = await dbModule.getUserByUsername(username);
+    const { username, password, email } = req.body;
+    if ((!username && !email) || !password) return res.status(400).json({ error: 'Missing username/email or password' });
+    let row = null;
+    try {
+      if (email || (username && String(username).includes('@'))) {
+        row = await dbModule.getUserByEmail(email || username);
+      } else {
+        row = await dbModule.getUserByUsername(username);
+      }
+    } catch (e) { row = null; }
     if (!row) return res.status(401).json({ error: 'Invalid credentials' });
     const ok = await bcrypt.compare(password, row.password);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
@@ -366,6 +385,18 @@ app.get('/customize', (req, res) => {
 // Serve a protected hello page
 app.get('/hello', (req, res) => {
   if (req.session && req.session.user) return res.sendFile(path.join(__dirname, 'public', 'hello.html'));
+  res.redirect('/login.html');
+});
+
+// Default homepage route: redirect to a sensible page instead of 404
+app.get('/', (req, res) => {
+  if (req.session && req.session.user) return res.redirect('/hello');
+  return res.redirect('/login.html');
+});
+
+// Optional: pretty route for friends page (protected)
+app.get('/friends', (req, res) => {
+  if (req.session && req.session.user) return res.sendFile(path.join(__dirname, 'public', 'friends.html'));
   res.redirect('/login.html');
 });
 
