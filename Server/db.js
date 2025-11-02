@@ -124,6 +124,10 @@ async function getUserByUsername(username) {
   return get('SELECT id, username, password FROM users WHERE username = ?', [username]);
 }
 
+async function getUserByEmail(email) {
+  return get('SELECT id, username, password FROM users WHERE email = ?', [email]);
+}
+
 async function getUserById(id) {
   return get('SELECT id, username, email, profile_picture, gender, birthday, avatar_id, created_at FROM users WHERE id = ?', [id]);
 }
@@ -418,6 +422,7 @@ module.exports = {
   getUserById,
   createNote,
   getNotesByUser,
+  getUserByEmail,
   // goals
   createGoal,
   getGoalsByUser,

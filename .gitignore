@@ -118,3 +118,7 @@ app.*.map.json
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
+
+# Node.js
+# Ignore node_modules in any subfolder (e.g., Server/node_modules)
+**/node_modules/

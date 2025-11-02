@@ -179,20 +179,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Email Field
+          // Username or Email Field
           CustomTextField(
             controller: _emailController,
-            labelText: 'Email',
-            hintText: 'Enter your email',
+            labelText: 'Username or Email',
+            hintText: 'Enter your username or email',
             keyboardType: TextInputType.emailAddress,
             prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your email';
+                return 'Please enter your username or email';
               }
-              if (!RegExp(AppConstants.emailPattern).hasMatch(value)) {
-                return 'Please enter a valid email';
-              }
+              // Allow either email or simple username (min 3 chars)
+              final v = value.trim();
+              final isEmail = RegExp(AppConstants.emailPattern).hasMatch(v);
+              if (!isEmail && v.length < 3) return 'Please enter a valid username/email';
               return null;
             },
           ),
@@ -427,8 +428,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      ref
-          .read(loginControllerProvider.notifier)
+      ref.read(loginControllerProvider.notifier)
           .login(_emailController.text.trim(), _passwordController.text);
     }
   }
