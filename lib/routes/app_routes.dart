@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
 import '../features/login/view/login_page.dart';
 import '../features/register page/register_page.dart';
 import '../features/profile/view/profile_page.dart';
@@ -31,11 +32,21 @@ class AppRoutes {
 
   /// GoRouter หลักของแอป - จัดการ routing ทั้งหมด
   static final GoRouter router = GoRouter(
-    /// หน้าเริ่มต้นเมื่อเปิดแอป - เริ่มที่หน้า Login เสมอ
-    initialLocation: AppConstants.loginRoute,
+    /// หน้าเริ่มต้นเมื่อเปิดแอป
+    /// สามารถ override ได้ในโหมด debug ด้วย --dart-define=START_AT=/profile
+    initialLocation: const String.fromEnvironment('START_AT', defaultValue: '')
+            .isNotEmpty
+        ? const String.fromEnvironment('START_AT')
+        : AppConstants.loginRoute,
 
     /// Redirect Logic - ตรวจสอบสิทธิ์การเข้าถึงและเปลี่ยนเส้นทางเมื่อจำเป็น
     redirect: (context, state) async {
+      // ในโหมด debug สามารถอนุญาตให้เข้าถึงทุกหน้าได้ เพื่อช่วยในการพัฒนา
+      // ใช้: --dart-define=ALLOW_UNAUTH=true ร่วมกับ START_AT
+      const bool allowUnAuth =
+          bool.fromEnvironment('ALLOW_UNAUTH', defaultValue: false);
+      if (kDebugMode && allowUnAuth) return null;
+
       // ตรวจสอบว่าผู้ใช้กำลังเข้าถึงหน้าไหน
       final isLoginRoute = state.matchedLocation == AppConstants.loginRoute;
       final isRegisterRoute = state.matchedLocation == AppConstants.registerRoute;

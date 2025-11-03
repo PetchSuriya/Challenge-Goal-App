@@ -29,14 +29,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
   late TextEditingController _emailController;
-  late TextEditingController _phoneController;
 
   // === ตัวแปรสำหรับเก็บข้อมูลที่แก้ไขแล้ว ===
   // เก็บข้อมูลที่ผู้ใช้แก้ไขจนกว่าจะ logout หรือ refresh หน้า
   String? _editedName;
   String? _editedGender;
   DateTime? _editedBirthday;
-  String? _editedPhone;
+  
 
   // === Lifecycle Methods ===
 
@@ -59,8 +58,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _initializeControllers() {
     _firstNameController = TextEditingController();
     _lastNameController = TextEditingController();
-    _emailController = TextEditingController();
-    _phoneController = TextEditingController();
+  _emailController = TextEditingController();
   }
 
   /// รีเฟรชข้อมูลโปรไฟล์เมื่อเข้าหน้า
@@ -74,8 +72,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _disposeControllers() {
     _firstNameController.dispose();
     _lastNameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
+  _emailController.dispose();
   }
 
   // === Helper Methods ===
@@ -84,8 +81,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _populateControllers(UserModel user) {
     _firstNameController.text = user.firstName;
     _lastNameController.text = user.lastName;
-    _emailController.text = user.email;
-    _phoneController.text = user.phoneNumber ?? '';
+  _emailController.text = user.email;
   }
 
   /// แปลง DateTime เป็น String แบบอ่านง่าย
@@ -399,12 +395,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             'Birthday',
             _formatBirthday(_editedBirthday) ?? 'August 15, 1990',
             () => _showEditBirthdayDialog(),
-          ),
-          _buildEditableInfoItem(
-            Icons.phone_outlined,
-            'Phone',
-            _editedPhone ?? user.phoneNumber ?? 'Not provided',
-            () => _showEditPhoneDialog(),
           ),
         ],
       ),
@@ -889,9 +879,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     ref.read(profileControllerProvider.notifier).upgradeSubscription(planType);
   }
 
-  void _reactivateSubscription() {
-    ref.read(profileControllerProvider.notifier).reactivateSubscription();
-  }
+  
 
   void _showUpgradeDialog() {
     showDialog(
@@ -1580,80 +1568,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  /// แสดง Dialog สำหรับแก้ไขเบอร์โทรศัพท์
-  void _showEditPhoneDialog() {
-    final phoneController = TextEditingController(
-      text:
-          _editedPhone ??
-          ref.read(profileControllerProvider).user?.phoneNumber ??
-          '',
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.phone_outlined, color: Colors.blue.shade600),
-            const SizedBox(width: 12),
-            const Text('Edit Phone'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter your new phone number:'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.phone),
-                hintText: '+66 XX XXX XXXX',
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (phoneController.text.isNotEmpty) {
-                setState(() {
-                  _editedPhone = phoneController.text;
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Phone updated to: ${phoneController.text}'),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade600,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
+  
 
   /// แสดง Dialog สำหรับรีเซ็ตรหัสผ่าน
   void _showResetPasswordDialog() {
