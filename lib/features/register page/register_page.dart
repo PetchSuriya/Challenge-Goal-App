@@ -18,7 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -26,8 +25,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  String _selectedCountryCode = '+66';
-  String _gender = 'other';
+  String? _gender; // nullable for hint/validation
 
   late final Dio _dio;
 
@@ -43,7 +41,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _lastNameController.dispose();
   _usernameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _dobController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -98,7 +95,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'username': _usernameController.text.trim(),
         'password': _passwordController.text,
         'email': _emailController.text.trim(),
-        'gender': _gender,
+  'gender': _gender ?? 'other',
         'birthday': formatDob(_dobController.text.trim()),
       };
 
@@ -216,11 +213,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  String? _validatePhone(String? value) {
-    if (value == null || value.trim().isEmpty) return 'กรุณากรอกเบอร์โทรศัพท์';
-    if (value.trim().length < 9) return 'เบอร์โทรศัพท์ไม่ถูกต้อง';
-    return null;
-  }
+  
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'กรุณากรอกรหัสผ่าน';
@@ -385,9 +378,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           const SizedBox(height: 20),
 
-          // Phone Number
-          _buildPhoneField(),
-          const SizedBox(height: 20),
+          // Phone Number removed per requirement
 
           // Date of Birth
           CustomTextField(
@@ -401,40 +392,75 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           const SizedBox(height: 20),
 
-          // Gender
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Gender',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey.shade700,
+          // Gender (DropdownButtonFormField with Thai labels and proper selection)
+          DropdownButtonFormField<String>(
+            value: _gender,
+            isExpanded: true,
+            icon: Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
+            decoration: InputDecoration(
+              labelText: 'Gender',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.blue.shade400, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            ),
+            hint: const Text('Gender'),
+            items: [
+              DropdownMenuItem(
+                value: 'male',
+                child: Row(
+                  children: [
+                    Icon(Icons.male, size: 20, color: Colors.grey.shade700),
+                    const SizedBox(width: 8),
+                    const Text('male'),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(12),
+              DropdownMenuItem(
+                value: 'female',
+                child: Row(
+                  children: [
+                    Icon(Icons.female, size: 20, color: Colors.grey.shade700),
+                    const SizedBox(width: 8),
+                    const Text('female'),
+                  ],
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _gender,
-                    items: const [
-                      DropdownMenuItem(value: 'male', child: Text('Male')),
-                      DropdownMenuItem(value: 'female', child: Text('Female')),
-                      DropdownMenuItem(value: 'other', child: Text('Other')),
-                    ],
-                    onChanged: (val) {
-                      setState(() { _gender = val ?? 'other'; });
-                    },
-                  ),
+              ),
+              DropdownMenuItem(
+                value: 'other',
+                child: Row(
+                  children: [
+                    Icon(Icons.transgender, size: 20, color: Colors.grey.shade700),
+                    const SizedBox(width: 8),
+                    const Text('other'),
+                  ],
                 ),
               ),
             ],
+            selectedItemBuilder: (context) {
+              final entries = [
+                {'v': 'male', 't': 'male', 'i': Icons.male},
+                {'v': 'female', 't': 'female', 'i': Icons.female},
+                {'v': 'other', 't': 'other', 'i': Icons.transgender},
+              ];
+              return entries.map((e) {
+                return Row(
+                  children: [
+                    Icon(e['i'] as IconData, size: 20, color: Colors.grey.shade700),
+                    const SizedBox(width: 8),
+                    Text(e['t'] as String),
+                  ],
+                );
+              }).toList();
+            },
+            onChanged: (val) => setState(() => _gender = val),
+            validator: (val) => val == null || val.isEmpty ? 'Select Gender' : null,
           ),
           const SizedBox(height: 20),
 
@@ -489,78 +515,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildPhoneField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Phone Number',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              // Country Code
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    right: BorderSide(color: Colors.grey.shade300),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🇹🇭', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 8),
-                    Text(
-                      _selectedCountryCode,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_drop_down, color: Colors.grey.shade600),
-                  ],
-                ),
-              ),
-              // Phone Number
-              Expanded(
-                child: TextFormField(
-                  controller: _phoneController,
-                  validator: _validatePhone,
-                  keyboardType: TextInputType.phone,
-                  style: const TextStyle(fontSize: 16, color: Colors.black),
-                  decoration: const InputDecoration(
-                    hintText: '(454) 726-0592',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  
 
   Widget _buildRegisterButton() {
     return Container(
