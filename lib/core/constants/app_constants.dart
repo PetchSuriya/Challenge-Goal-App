@@ -92,7 +92,7 @@ class AppConstants {
   static const String costumeRoute = '/costumes';
   static const String selectedCostumeKey = 'selected_costume';
   // Avatar/costume sizing to keep placement consistent across screens
-  static const double avatarCostumeWidth = 300.0;
+  static const double avatarCostumeWidth = 400.0;
   static const double costumeHatWidthFactor =
       0.533; // hat width = avatarWidth * factor
   static const double costumeHatAlignmentY =

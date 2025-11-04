@@ -3,15 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../controller/friends_controller.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../services/friends_service.dart';
 
 class FriendsHomePage extends ConsumerStatefulWidget {
-  final String friendName;
-  final String? friendAvatarUrl;
+  final int friendId;
 
   const FriendsHomePage({
     super.key,
-    required this.friendName,
-    this.friendAvatarUrl,
+    required this.friendId,
   });
 
   @override
@@ -22,14 +21,11 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize friend's data when the page loads
+    // Load friend's data when the page loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(friendsControllerProvider.notifier)
-          .initializeFriend(
-            friendName: widget.friendName,
-            friendAvatarUrl: widget.friendAvatarUrl,
-          );
+          .loadFriendDetails(widget.friendId);
     });
   }
 
@@ -37,13 +33,83 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
   Widget build(BuildContext context) {
     final friendsState = ref.watch(friendsControllerProvider);
 
+    if (friendsState.isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: const SafeArea(
+          child: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    if (friendsState.error != null) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+                const SizedBox(height: 16),
+                const Text(
+                  'Failed to load friend details',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  friendsState.error!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context.go(AppConstants.homeRoute),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final friend = friendsState.selectedFriend;
+    if (friend == null) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.person_off, size: 64, color: Colors.grey.shade400),
+                const SizedBox(height: 16),
+                const Text(
+                  'Friend not found',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => context.go(AppConstants.homeRoute),
+                  child: const Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: Column(
           children: [
             // Top Bar
-            _buildTopBar(context, friendsState),
+            _buildTopBar(context, friend),
 
             // Main Content Area
             Expanded(
@@ -54,7 +120,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                     top: 80, // Position below top bar
                     left: 0,
                     right: 0,
-                    child: Center(child: _buildFriendAvatar(friendsState)),
+                    child: Center(child: _buildFriendAvatar(friend)),
                   ),
 
                   // Mutual Goal Button (Bottom)
@@ -73,7 +139,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, FriendsState friendsState) {
+  Widget _buildTopBar(BuildContext context, User friend) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
@@ -101,10 +167,15 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 24,
+                  child: Center(
+                    child: Text(
+                      friend.username[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                 ),
 
@@ -113,7 +184,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
                 // Friend's name
                 Expanded(
                   child: Text(
-                    friendsState.friendName,
+                    friend.username,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -151,7 +222,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
     );
   }
 
-  Widget _buildFriendAvatar(FriendsState friendsState) {
+  Widget _buildFriendAvatar(User friend) {
     // Use the same transparent PNG approach as the home page avatar
     return Image.asset(
       'assets/images/FfriendsAvatar.png',
@@ -159,12 +230,12 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
       height: 400,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
-        return _buildFallbackFriendAvatar(friendsState);
+        return _buildFallbackFriendAvatar(friend);
       },
     );
   }
 
-  Widget _buildFallbackFriendAvatar(FriendsState friendsState) {
+  Widget _buildFallbackFriendAvatar(User friend) {
     // Simple fallback avatar without background, matching home page style
     return SizedBox(
       width: 400,
@@ -191,7 +262,7 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
           ),
           const SizedBox(height: 16),
           Text(
-            friendsState.friendName,
+            friend.username,
             style: TextStyle(
               color: Colors.grey.shade700,
               fontSize: 24,

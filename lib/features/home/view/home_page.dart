@@ -47,22 +47,27 @@ class _HomePageState extends ConsumerState<HomePage> {
             Expanded(
               child: Stack(
                 children: [
-                  // Avatar positioned between Friends button and Goals button
-                  Positioned(
-                    top: 60,
-                    left: 0,
-                    right:
-                        0, // Position below Friends button area left: 0, right: 0,
-                    child: Center(
-                      child: SizedBox(
-                        width: AppConstants.avatarCostumeWidth,
-                        height: AppConstants.avatarCostumeWidth,
-                        child: Stack(
+                  // Avatar centered in the available space
+                  Center(
+                    child: Container(
+                      width: AppConstants.avatarCostumeWidth,
+                      height: AppConstants.avatarCostumeWidth,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
                           children: [
                             // Avatar base
                             Positioned.fill(
                               child: Image.asset(
-                                'assets/images/avatar.png',
+                                'assets/images/Avatar.png',
                                 width: AppConstants.avatarCostumeWidth,
                                 height: AppConstants.avatarCostumeWidth,
                                 fit: BoxFit.contain,
@@ -121,11 +126,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                     ),
-                  ),
 
-                  // Goal Button at bottom
+                  // Goal Button at bottom with more margin to give avatar space
                   Positioned(
-                    bottom: 40,
+                    bottom: 60,
                     left: 24,
                     right: 24,
                     child: _buildGoalButton(context),
@@ -387,33 +391,4 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.construction, color: Colors.orange.shade600),
-            const SizedBox(width: 12),
-            const Text('Coming Soon!'),
-          ],
-        ),
-        content: Text(
-          '$feature feature is under development and will be available in the next update.',
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(foregroundColor: Colors.blue.shade600),
-            child: const Text(
-              'Got it!',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

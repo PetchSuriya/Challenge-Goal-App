@@ -8,9 +8,9 @@ import '../features/profile/view/reset_password_page.dart';
 import '../features/home/view/home_page.dart';
 import '../features/profile/view/costume_page.dart';
 import '../features/friends/view/friends_home_page.dart';
+import '../features/friends/view/friends_list_page.dart';
 import '../features/goal/view/goal_page.dart';
 import '../features/goal/view/goal_detail_page.dart';
-import '../features/friend/view/friend_page.dart';
 import '../services/auth_service.dart';
 import '../core/constants/app_constants.dart';
 
@@ -126,19 +126,16 @@ class AppRoutes {
       GoRoute(
         path: AppConstants.friendRoute,
         name: 'friend',
-        builder: (context, state) => const FriendPage(),
+        builder: (context, state) => const FriendsListPage(),
       ),
 
       GoRoute(
-        path: '/friends/:friendName',
-        name: 'friends-home',
+        path: '/friends/profile/:friendId',
+        name: 'friends-profile',
         builder: (context, state) {
-          final friendName = state.pathParameters['friendName'] ?? 'Friend';
-          final friendAvatarUrl = state.uri.queryParameters['avatarUrl'];
-          return FriendsHomePage(
-            friendName: friendName,
-            friendAvatarUrl: friendAvatarUrl,
-          );
+          final friendIdStr = state.pathParameters['friendId'] ?? '0';
+          final friendId = int.tryParse(friendIdStr) ?? 0;
+          return FriendsHomePage(friendId: friendId);
         },
       ),
     ],
