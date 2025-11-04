@@ -16,7 +16,16 @@ module.exports = async function seedItems(run, get, all, addColumnIfNotExistsTab
       { id: 7, name: 'Cloth Hat', slot: 'head', picture: 'clothhat.png', type: 'armor' },
       { id: 8, name: 'Chainmail', slot: 'body', picture: 'chainmail.png', type: 'armor' },
       { id: 9, name: 'Tower Shield', slot: 'hand', picture: 'towershield.png', type: 'shield' },
-      { id: 10, name: 'Amulet of Health', slot: 'accessory', picture: 'amulet.png', type: 'accessory' }
+      { id: 10, name: 'Amulet of Health', slot: 'accessory', picture: 'amulet.png', type: 'accessory' },
+      { id: 11, name: 'White Hat', slot: 'head', picture: 'White_hat.png', type: 'hat' },
+      { id: 12, name: 'Green Hat', slot: 'head', picture: 'Green_hat.png', type: 'hat' },
+      { id: 13, name: 'Red Hat', slot: 'head', picture: 'Red_hat.png', type: 'hat' },
+      { id: 14, name: 'Black Suit', slot: 'body', picture: 'Black_suit.png', type: 'suit' },
+      { id: 15, name: 'Blue Suit', slot: 'body', picture: 'Blue_suit.png', type: 'suit' },
+      { id: 16, name: 'Brown Suit', slot: 'body', picture: 'Brown_suit.png', type: 'suit' },
+      { id: 17, name: 'Grey Shoes', slot: 'foot', picture: 'Grey_shoes.png', type: 'shoes' },
+      { id: 18, name: 'Blue Shoes', slot: 'foot', picture: 'Blue_shoes.png', type: 'shoes' },
+      { id: 19, name: 'Brown Shoes', slot: 'foot', picture: 'Brown_shoes.png', type: 'shoes' },
     ];
 
     for (const it of items) {

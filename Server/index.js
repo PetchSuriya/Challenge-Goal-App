@@ -400,6 +400,7 @@ app.get('/hello', (req, res) => {
   res.redirect('/login.html');
 });
 
+<<<<<<< Updated upstream:Server/index.js
 // Default homepage route: redirect to a sensible page instead of 404
 app.get('/', (req, res) => {
   if (req.session && req.session.user) return res.redirect('/hello');
@@ -412,6 +413,16 @@ app.get('/friends', (req, res) => {
   res.redirect('/login.html');
 });
 
+=======
+// Root and /index: redirect to an appropriate page
+app.get(['/', '/index'], (req, res) => {
+  // If user is logged in, send them to the protected hello (or app landing)
+  if (req.session && req.session.user) return res.redirect('/hello');
+  // Otherwise send to login page
+  return res.redirect('/login.html');
+});
+
+>>>>>>> Stashed changes:index.js
 // Fallback
 app.use((req, res) => res.status(404).send('Not found'));
 

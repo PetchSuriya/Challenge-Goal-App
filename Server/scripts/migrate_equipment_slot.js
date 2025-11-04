@@ -10,7 +10,8 @@ const db = require('../db');
         const slot = item.slot || 'hand';
         if (slot === 'head') await db.run('UPDATE avatars SET head = ? WHERE id = ?', [item.id, r.id]);
         else if (slot === 'body') await db.run('UPDATE avatars SET body = ? WHERE id = ?', [item.id, r.id]);
-        else if (slot === 'hand') await db.run('UPDATE avatars SET hand = ? WHERE id = ?', [item.id, r.id]);
+  else if (slot === 'hand') await db.run('UPDATE avatars SET hand = ? WHERE id = ?', [item.id, r.id]);
+  else if (slot === 'foot') await db.run('UPDATE avatars SET foot = ? WHERE id = ?', [item.id, r.id]);
         else if (slot === 'accessory') await db.run('UPDATE avatars SET accessory = ? WHERE id = ?', [item.id, r.id]);
         // clear the old equipment column
         await db.run('UPDATE avatars SET equipment = NULL WHERE id = ?', [r.id]);

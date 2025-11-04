@@ -21,7 +21,7 @@
       <div class="slotList">
         <div class="slot" id="slot-head">Head</div>
         <div class="slot" id="slot-body">Body</div>
-        <div class="slot" id="slot-hand">Hand</div>
+        <div class="slot" id="slot-foot">Foot</div>
         <div class="slot" id="slot-accessory">Accessory</div>
       </div>
     </div>
@@ -62,15 +62,16 @@
         // API returns { equipped: { head, body, hand, accessory }, accessory }
         const main = data && data.equipped ? data.equipped : {};
         const accessory = data && data.accessory ? data.accessory : null;
-        // clear slots
-        document.getElementById('slot-head').textContent = 'Head';
-        document.getElementById('slot-body').textContent = 'Body';
-        document.getElementById('slot-hand').textContent = 'Hand';
-        document.getElementById('slot-accessory').textContent = 'Accessory';
+  // clear slots
+  document.getElementById('slot-head').textContent = 'Head';
+  document.getElementById('slot-body').textContent = 'Body';
+  document.getElementById('slot-foot').textContent = 'Foot';
+  document.getElementById('slot-accessory').textContent = 'Accessory';
         if (main.head && main.head.name) document.getElementById('slot-head').textContent = main.head.name;
         if (main.body && main.body.name) document.getElementById('slot-body').textContent = main.body.name;
-        if (main.hand && main.hand.name) document.getElementById('slot-hand').textContent = main.hand.name;
-        if (accessory && accessory.name) document.getElementById('slot-accessory').textContent = accessory.name;
+  if (main.foot && main.foot.name) document.getElementById('slot-foot').textContent = main.foot.name;
+  // 'hand' slot intentionally removed from UI
+  if (accessory && accessory.name) document.getElementById('slot-accessory').textContent = accessory.name;
       }
 
       // initial
@@ -99,18 +100,19 @@
             o.textContent = av.equipped.head.name;
             box.appendChild(o);
           }
-          if (av.equipped.hand && av.equipped.hand.name) {
-            const o2 = document.createElement('div');
-            o2.style.position = 'absolute';
-            o2.style.top = '8px';
-            o2.style.left = '8px';
-            o2.style.background = 'rgba(0,0,0,0.6)';
-            o2.style.color = '#fff';
-            o2.style.padding = '4px 6px';
-            o2.style.borderRadius = '4px';
-            o2.style.fontSize = '12px';
-            o2.textContent = av.equipped.hand.name;
-            box.appendChild(o2);
+          // 'hand' overlay removed from UI (foot slot used for shoes)
+          if (av.equipped.foot && av.equipped.foot.name) {
+            const o4 = document.createElement('div');
+            o4.style.position = 'absolute';
+            o4.style.bottom = '8px';
+            o4.style.left = '8px';
+            o4.style.background = 'rgba(0,0,0,0.6)';
+            o4.style.color = '#fff';
+            o4.style.padding = '4px 6px';
+            o4.style.borderRadius = '4px';
+            o4.style.fontSize = '12px';
+            o4.textContent = av.equipped.foot.name;
+            box.appendChild(o4);
           }
           if (av.equipped.body && av.equipped.body.name) {
             const o3 = document.createElement('div');

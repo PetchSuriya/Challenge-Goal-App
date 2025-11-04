@@ -14,6 +14,15 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   String? _savedCostume;
+  // Helper to accept either a full asset path or a filename stored in preferences.
+  String _assetPath(String name) {
+    if (name.startsWith('assets/')) return name;
+    // Support legacy saved names via costumeNameMap
+    final mapped = AppConstants.costumeNameMap[name];
+    final file = mapped ?? name;
+    return 'assets/images/$file';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             // Avatar base
                             Positioned.fill(
                               child: Image.asset(
-                                'assets/images/avatar.png',
+                                'assets/images/Avatar.png',
                                 width: AppConstants.avatarCostumeWidth,
                                 height: AppConstants.avatarCostumeWidth,
                                 fit: BoxFit.contain,
@@ -80,11 +89,35 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   final avatarW =
                                       AppConstants.avatarCostumeWidth;
                                   final avatarH = avatarW; // square avatar
+                                  final saved = (_savedCostume ?? '');
+                                  final isSuit = saved.toLowerCase().contains(
+                                    'suit',
+                                  );
+                                  final isShoe =
+                                      saved.toLowerCase().contains('shoe') ||
+                                      saved.toLowerCase().contains('shoes');
+                                  final widthFactor = isSuit
+                                      ? AppConstants.costumeSuitWidthFactor
+                                      : (isShoe
+                                            ? AppConstants
+                                                  .costumeShoeWidthFactor
+                                            : AppConstants
+                                                  .costumeHatWidthFactor);
                                   final hatW =
                                       avatarW *
-                                      AppConstants.costumeHatWidthFactor;
-                                  final alignY =
-                                      AppConstants.costumeHatAlignmentY;
+                                      widthFactor *
+                                      (isSuit
+                                          ? AppConstants.costumeSuitScale
+                                          : (isShoe
+                                                ? AppConstants.costumeShoeScale
+                                                : AppConstants
+                                                      .costumeHatScale));
+                                  final alignY = isSuit
+                                      ? AppConstants.costumeSuitAlignmentY
+                                      : (isShoe
+                                            ? AppConstants.costumeShoeAlignmentY
+                                            : AppConstants
+                                                  .costumeHatAlignmentY);
 
                                   // alignmentY (-1..1) -> fraction from top (0..1)
                                   final fracFromTop = (alignY + 1) / 2;
@@ -96,19 +129,40 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   final hatTop = centerY - (hatW / 2);
                                   final hatLeft = (avatarW - hatW) / 2;
 
-                                  // Apply per-costume pixel nudges (x, y)
+                                  // Apply per-costume pixel nudges (x, y), scaled by the
+                                  // appropriate code-only scale (hat vs suit) so nudges stay
+                                  // proportional when you adjust `AppConstants.costumeHatScale`
+                                  // or `AppConstants.costumeSuitScale`.
                                   final perOffset =
                                       AppConstants
-                                          .costumeOffsets[_savedCostume ??
+                                          .costumeOffsetsHome[_savedCostume ??
                                           ''] ??
                                       Offset.zero;
+                                  final scaledOffset = Offset(
+                                    perOffset.dx *
+                                        (isSuit
+                                            ? AppConstants.costumeSuitScale
+                                            : (isShoe
+                                                  ? AppConstants
+                                                        .costumeShoeScale
+                                                  : AppConstants
+                                                        .costumeHatScale)),
+                                    perOffset.dy *
+                                        (isSuit
+                                            ? AppConstants.costumeSuitScale
+                                            : (isShoe
+                                                  ? AppConstants
+                                                        .costumeShoeScale
+                                                  : AppConstants
+                                                        .costumeHatScale)),
+                                  );
 
                                   return Positioned(
-                                    left: hatLeft + perOffset.dx,
-                                    top: hatTop + perOffset.dy,
+                                    left: hatLeft + scaledOffset.dx,
+                                    top: hatTop + scaledOffset.dy,
                                     width: hatW,
                                     child: Image.asset(
-                                      'assets/images/$_savedCostume',
+                                      _assetPath(_savedCostume ?? ''),
                                       fit: BoxFit.contain,
                                       errorBuilder:
                                           (context, error, stackTrace) =>
@@ -387,33 +441,5 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.construction, color: Colors.orange.shade600),
-            const SizedBox(width: 12),
-            const Text('Coming Soon!'),
-          ],
-        ),
-        content: Text(
-          '$feature feature is under development and will be available in the next update.',
-          style: const TextStyle(fontSize: 16),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(foregroundColor: Colors.blue.shade600),
-            child: const Text(
-              'Got it!',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Coming-soon dialog helper removed (unused)
 }

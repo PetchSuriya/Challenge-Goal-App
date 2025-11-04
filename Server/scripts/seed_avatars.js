@@ -5,7 +5,9 @@ module.exports = async function seedAvatars(run, get, all, addColumnIfNotExistsT
     await addColumnIfNotExistsTable('avatars', 'equipment', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'head', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'body', 'INTEGER');
-    await addColumnIfNotExistsTable('avatars', 'hand', 'INTEGER');
+  await addColumnIfNotExistsTable('avatars', 'hand', 'INTEGER');
+  // new foot slot for shoes
+  await addColumnIfNotExistsTable('avatars', 'foot', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'accessory', 'INTEGER');
 
     // Insert avatars (idempotent)
@@ -15,9 +17,9 @@ module.exports = async function seedAvatars(run, get, all, addColumnIfNotExistsT
 
     // Migrate old single 'equipment' value into head if head is null (idempotent)
     try {
-      const rows = await all('SELECT id, equipment, head, body, hand FROM avatars');
+      const rows = await all('SELECT id, equipment, head, body, hand, foot FROM avatars');
       for (const r of rows) {
-        if ((r.equipment || r.equipment === 0) && !r.head && !r.body && !r.hand) {
+        if ((r.equipment || r.equipment === 0) && !r.head && !r.body && !r.hand && !r.foot) {
           await run('UPDATE avatars SET head = ? WHERE id = ?', [r.equipment, r.id]);
           // clear equipment for compatibility
           await run('UPDATE avatars SET equipment = NULL WHERE id = ?', [r.id]);

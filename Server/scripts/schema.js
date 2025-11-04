@@ -35,6 +35,7 @@ module.exports = async function createSchema(db) {
       head INTEGER,
       body INTEGER,
       hand INTEGER,
+      foot INTEGER,
       accessory INTEGER,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )`);

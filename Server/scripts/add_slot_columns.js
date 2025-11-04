@@ -8,7 +8,8 @@ db.serialize(() => {
     const tasks = [];
     if (!names.includes('head')) tasks.push(cb => db.run("ALTER TABLE avatars ADD COLUMN head INTEGER", cb));
     if (!names.includes('body')) tasks.push(cb => db.run("ALTER TABLE avatars ADD COLUMN body INTEGER", cb));
-    if (!names.includes('hand')) tasks.push(cb => db.run("ALTER TABLE avatars ADD COLUMN hand INTEGER", cb));
+  if (!names.includes('hand')) tasks.push(cb => db.run("ALTER TABLE avatars ADD COLUMN hand INTEGER", cb));
+  if (!names.includes('foot')) tasks.push(cb => db.run("ALTER TABLE avatars ADD COLUMN foot INTEGER", cb));
     if (!names.includes('accessory')) tasks.push(cb => db.run("ALTER TABLE avatars ADD COLUMN accessory INTEGER", cb));
     if (tasks.length === 0) { console.log('slot columns already present'); db.close(()=>process.exit(0)); return; }
     let i = 0;

@@ -27,6 +27,8 @@ createSchema(db).then(() => {
     await addColumnIfNotExistsTable('avatars', 'head', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'body', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'hand', 'INTEGER');
+  // add foot slot for shoes (migrated from hand where appropriate)
+  await addColumnIfNotExistsTable('avatars', 'foot', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'accessory', 'INTEGER');
     await addColumnIfNotExistsTable('avatars', 'accessory', 'INTEGER');
     // created_at: add as TEXT and set existing rows' values to now (can't use non-constant default in ALTER)
@@ -42,6 +44,14 @@ createSchema(db).then(() => {
       if (!names.includes('reward_item_id')) await run("ALTER TABLE goals ADD COLUMN reward_item_id INTEGER");
       if (!names.includes('completed_at')) await run("ALTER TABLE goals ADD COLUMN completed_at TEXT");
     } catch (e) { console.error('ensure goals columns error', e && e.message ? e.message : e); }
+    // Migrate any existing avatar rows where 'hand' references a foot item (shoe)
+    try {
+      // Move shoe-equipped items stored in 'hand' into the new 'foot' column
+      await run("UPDATE avatars SET foot = hand WHERE hand IS NOT NULL AND EXISTS (SELECT 1 FROM items WHERE items.id = avatars.hand AND items.slot = 'foot')");
+      // clear hand where we've moved it
+      await run("UPDATE avatars SET hand = NULL WHERE foot IS NOT NULL");
+      console.log('migrated shoe items from hand -> foot where applicable');
+    } catch (e) { /* non-fatal migration error */ }
       // Ensure goal_participants columns for per-participant completion exist
       try {
         const pcols = await all("PRAGMA table_info('goal_participants')");
@@ -435,11 +445,11 @@ module.exports = {
   // returns avatars for a user
   async getAvatarsByUser(userId) {
     // include equipped item (if any) - still return equipment for compatibility
-    return all(`SELECT avatars.id, avatars.name, avatars.appearance, avatars.equipment, avatars.head, avatars.body, avatars.hand, avatars.accessory, items.id as item_id, items.name as item_name, items.slot as item_slot, items.picture as item_picture
+    return all(`SELECT avatars.id, avatars.name, avatars.appearance, avatars.equipment, avatars.head, avatars.body, avatars.hand, avatars.foot, avatars.accessory, items.id as item_id, items.name as item_name, items.slot as item_slot, items.picture as item_picture
       FROM avatars LEFT JOIN items ON avatars.equipment = items.id WHERE avatars.user_id = ?`, [userId]);
   },
   async getAvatarById(id) {
-    return get('SELECT id, user_id, name, appearance, equipment, head, body, hand, accessory FROM avatars WHERE id = ?', [id]);
+    return get('SELECT id, user_id, name, appearance, equipment, head, body, hand, foot, accessory FROM avatars WHERE id = ?', [id]);
   },
   async getItems() {
     return all('SELECT id, name, slot, picture, type FROM items');
@@ -450,15 +460,17 @@ module.exports = {
   // return per-slot equipped items as an object
   async getEquippedByAvatar(avatarId) {
     const row = await get(`SELECT 
-      a.id, a.head, a.body, a.hand, a.accessory,
+      a.id, a.head, a.body, a.hand, a.foot, a.accessory,
       h.id as head_id, h.name as head_name, h.slot as head_slot, h.picture as head_picture, h.type as head_type,
       b.id as body_id, b.name as body_name, b.slot as body_slot, b.picture as body_picture, b.type as body_type,
       ha.id as hand_id, ha.name as hand_name, ha.slot as hand_slot, ha.picture as hand_picture, ha.type as hand_type,
+      fo.id as foot_id, fo.name as foot_name, fo.slot as foot_slot, fo.picture as foot_picture, fo.type as foot_type,
       ac.id as acc_id, ac.name as acc_name, ac.slot as acc_slot, ac.picture as acc_picture, ac.type as acc_type
       FROM avatars a
       LEFT JOIN items h ON a.head = h.id
       LEFT JOIN items b ON a.body = b.id
       LEFT JOIN items ha ON a.hand = ha.id
+      LEFT JOIN items fo ON a.foot = fo.id
       LEFT JOIN items ac ON a.accessory = ac.id
       WHERE a.id = ?`, [avatarId]);
     if (!row) return null;
@@ -470,6 +482,7 @@ module.exports = {
       head: make('head'),
       body: make('body'),
       hand: make('hand'),
+      foot: make('foot'),
       accessory: make('acc')
     };
   },
@@ -484,6 +497,7 @@ module.exports = {
     if (slot === 'head') return run('UPDATE avatars SET head = ? WHERE id = ?', [itemId, avatarId]);
     if (slot === 'body') return run('UPDATE avatars SET body = ? WHERE id = ?', [itemId, avatarId]);
     if (slot === 'hand') return run('UPDATE avatars SET hand = ? WHERE id = ?', [itemId, avatarId]);
+    if (slot === 'foot') return run('UPDATE avatars SET foot = ? WHERE id = ?', [itemId, avatarId]);
     if (slot === 'accessory') return run('UPDATE avatars SET accessory = ? WHERE id = ?', [itemId, avatarId]);
     // fallback: set hand
     return run('UPDATE avatars SET hand = ? WHERE id = ?', [itemId, avatarId]);
@@ -493,14 +507,15 @@ module.exports = {
     if (slot === 'head') return run('UPDATE avatars SET head = NULL WHERE id = ?', [avatarId]);
     if (slot === 'body') return run('UPDATE avatars SET body = NULL WHERE id = ?', [avatarId]);
     if (slot === 'hand') return run('UPDATE avatars SET hand = NULL WHERE id = ?', [avatarId]);
+    if (slot === 'foot') return run('UPDATE avatars SET foot = NULL WHERE id = ?', [avatarId]);
     if (slot === 'accessory') return run('UPDATE avatars SET accessory = NULL WHERE id = ?', [avatarId]);
     if (slot === 'equipment') return run('UPDATE avatars SET equipment = NULL WHERE id = ?', [avatarId]);
-    return run('UPDATE avatars SET head = NULL, body = NULL, hand = NULL, accessory = NULL WHERE id = ?', [avatarId]);
+    return run('UPDATE avatars SET head = NULL, body = NULL, hand = NULL, foot = NULL, accessory = NULL WHERE id = ?', [avatarId]);
   }
   ,
   // unequip all slots (head/body/hand/accessory/equipment)
   async unequipAll(avatarId) {
-    return run('UPDATE avatars SET head = NULL, body = NULL, hand = NULL, accessory = NULL, equipment = NULL WHERE id = ?', [avatarId]);
+    return run('UPDATE avatars SET head = NULL, body = NULL, hand = NULL, foot = NULL, accessory = NULL, equipment = NULL WHERE id = ?', [avatarId]);
   }
   ,
   // friends

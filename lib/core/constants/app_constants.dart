@@ -98,17 +98,73 @@ class AppConstants {
   static const double costumeHatAlignmentY =
       -0.48; // vertical alignment for hat overlay
   // Per-costume pixel offsets (x, y) applied after alignment. Use small values
-  // to nudge hats into place. Keys are file names present in assets/images/.
-  static const Map<String, Offset> costumeOffsets = {
-    'Black_Cap.png': const Offset(0, -10),
-    'Blue_Cap.png': const Offset(0, -10),
-    'Green_Cap.png': const Offset(0, -10),
-    'Red_Hat.png': const Offset(0, -10),
-    'White_Hat.png': const Offset(0, -10),
-    'Yellow_Hat.png': const Offset(0, -10),
+  // to nudge hats into place. We provide two separate maps so Home and the
+  // Costume preview page can have independent fine-tuning.
+  static const Map<String, Offset> costumeOffsetsHome = {
+    'Green_hat.png': const Offset(0, -22),
+    'Red_hat.png': const Offset(0, -22),
+    'White_hat.png': const Offset(0, -22),
+    // Tuned suit offsets for Home page (dx, dy). These nudges were
+    // adjusted so suits sit correctly on the avatar when rendered in the
+    // dashboard. Values are in pixels and will be scaled by
+    // `costumeHatScale` / `costumeSuitScale` at render time.
+    'Black_suit.png': const Offset(0, 50),
+    'Blue_suit.png': const Offset(0, 50),
+    'Brown_suit.png': const Offset(0, 50),
+    // Shoes (bottom-of-avatar accessories)
+    'Blue_shoes.png': const Offset(0, 33),
+    'Brown_shoes.png': const Offset(0, 33),
+    'Grey_shoes.png': const Offset(0, 33),
+  };
+
+  static const Map<String, Offset> costumeOffsetsCostume = {
+    // costume page preview might prefer a different lap/placement
+    'Green_hat.png': const Offset(0, -4),
+    'Red_hat.png': const Offset(0, -4),
+    'White_hat.png': const Offset(0, -4),
+    // Slightly different (less aggressive) offsets for the preview so
+    // the suit appears natural within the Costume page UI.
+    'Black_suit.png': const Offset(0, 90),
+    'Blue_suit.png': const Offset(0, 90),
+    'Brown_suit.png': const Offset(0, 90),
+    // Preview offsets for shoes (milder values so preview fits the UI)
+    'Blue_shoes.png': const Offset(0, -20),
+    'Brown_shoes.png': const Offset(0, -22),
+    'Grey_shoes.png': const Offset(0, -20),
+  };
+
+  // Backwards-compatible alias (defaults to Home offsets)
+  static const Map<String, Offset> costumeOffsets = costumeOffsetsHome;
+  // Compatibility map: map older/stored costume filenames to the current
+  // asset filenames in assets/images/. This helps when files were renamed or
+  // moved but the user's saved preference still uses the old name.
+  static const Map<String, String> costumeNameMap = {
+    'Green_Cap.png': 'Green_hat.png',
+    'Red_Hat.png': 'Red_hat.png',
+    'White_Hat.png': 'White_hat.png',
   };
   // Default vertical lap amount (pixels) to move hats down so they "lap" the avatar's head.
   // Positive values move the hat down (towards the avatar), negative move up.
   // Increased from 12.0 to 20.0 to make hats sit more over the avatar's head.
-  static const double costumeLapOffsetY = 20.0;
+  static const double costumeLapOffsetY = -2.0;
+  // Default scales used when you want to adjust costume sizes purely in code
+  // (no UI control). These allow independent scaling of hats vs suits.
+  // - `costumeHatScale`: scale applied to hat assets and hat-related offsets.
+  // - `costumeSuitScale`: scale applied to suit assets and suit-related offsets.
+  // Assumption: keep previous default for hats (0.75) and use 0.90 for suits
+  // so full-body assets sit proportionally on the avatar. These values can
+  // be tuned later if you prefer different sizing.
+  static const double costumeHatScale = 0.75;
+  // Scale for shoe assets
+  static const double costumeShoeScale = 2.0;
+  static const double costumeSuitScale = 0.4;
+  // Shoe-specific sizing and alignment (shoes render near the avatar bottom)
+  static const double costumeShoeWidthFactor = 0.32;
+  static const double costumeShoeAlignmentY = 0.86;
+  // Suit-specific sizing and alignment. Suits are full-body assets and
+  // require different width and vertical alignment compared to hats.
+  static const double costumeSuitWidthFactor =
+      1.0; // suit width = avatarWidth * factor
+  static const double costumeSuitAlignmentY =
+      0.0; // suit alignment (center-ish)
 }
