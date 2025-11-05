@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../services/goal_service.dart';
+import '../../../services/friends_service.dart';
 import 'dart:io';
+import 'dart:convert';
 
 /// GoalFormPage - หน้าฟอร์มสำหรับสร้างเป้าหมายใหม่
 class GoalFormPage extends StatefulWidget {
@@ -133,44 +135,73 @@ class _GoalFormPageState extends State<GoalFormPage> {
     }
   }
 
-  void _showAddFriendDialog() {
-    // Mock list of available friends
-    final List<Map<String, dynamic>> availableFriends = [
-      {'name': 'John doe', 'avatar': '👤'},
-      {'name': 'Jane doe', 'avatar': '👤'},
-      {'name': 'Alex Smith', 'avatar': '👤'},
-      {'name': 'Sarah Johnson', 'avatar': '👤'},
-      {'name': 'Mike Brown', 'avatar': '👤'},
-      {'name': 'Emma Wilson', 'avatar': '👤'},
-      {'name': 'Chris Lee', 'avatar': '👤'},
-      {'name': 'Lisa Anderson', 'avatar': '👤'},
-    ];
-
-    final TextEditingController searchController = TextEditingController();
-    List<String> tempSelectedFriends = List.from(_selectedFriends);
-    List<Map<String, dynamic>> filteredFriends = List.from(availableFriends);
-
+  Future<void> _showAddFriendDialog() async {
+    // Show loading dialog first
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          void filterFriends(String query) {
-            setDialogState(() {
-              if (query.isEmpty) {
-                filteredFriends = List.from(availableFriends);
-              } else {
-                filteredFriends = availableFriends
-                    .where(
-                      (friend) => friend['name'].toLowerCase().contains(
-                        query.toLowerCase(),
-                      ),
-                    )
-                    .toList();
-              }
-            });
-          }
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
 
-          return Dialog(
+    try {
+      // Fetch real friends data from API
+      final friendsService = FriendsService();
+      final friendsData = await friendsService.getFriends();
+      
+      // Convert User objects to Map format for compatibility
+      final List<Map<String, dynamic>> availableFriends = friendsData.friends
+          .map((user) => {
+                'id': user.id,
+                'name': user.username,
+                'avatar': '👤', // Default avatar, can be customized later
+              })
+          .toList();
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // If no friends found, show message
+      if (availableFriends.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You have no friends yet. Add friends first!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      final TextEditingController searchController = TextEditingController();
+      List<String> tempSelectedFriends = List.from(_selectedFriends);
+      List<Map<String, dynamic>> filteredFriends = List.from(availableFriends);
+
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) {
+            void filterFriends(String query) {
+              setDialogState(() {
+                if (query.isEmpty) {
+                  filteredFriends = List.from(availableFriends);
+                } else {
+                  filteredFriends = availableFriends
+                      .where(
+                        (friend) => friend['name'].toLowerCase().contains(
+                          query.toLowerCase(),
+                        ),
+                      )
+                      .toList();
+                }
+              });
+            }
+
+            return Dialog(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
             shape: RoundedRectangleBorder(
@@ -387,12 +418,26 @@ class _GoalFormPageState extends State<GoalFormPage> {
               ),
             ),
           );
-        },
-      ),
-    );
+          },
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load friends: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       // ตรวจสอบว่าเลือก Category และ Goal Type แล้วหรือยัง
       if (_selectedCategory == null) {
@@ -432,6 +477,17 @@ class _GoalFormPageState extends State<GoalFormPage> {
       final start = _selectedDateRange?.start;
       final durationText = days != null ? '$days days' : null;
 
+      // Convert image to base64 if selected
+      String? goalPictureBase64;
+      if (_selectedImage != null) {
+        try {
+          final bytes = await _selectedImage!.readAsBytes();
+          goalPictureBase64 = 'data:image/png;base64,${base64Encode(bytes)}';
+        } catch (e) {
+          print('Error encoding image: $e');
+        }
+      }
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -445,7 +501,7 @@ class _GoalFormPageState extends State<GoalFormPage> {
             category: _selectedCategory,
             type: type,
             startDate: start,
-            // goalPicture: not uploaded yet; can be added later when upload supported
+            goalPicture: goalPictureBase64,
           )
           .then((goal) {
         Navigator.of(context).pop(); // close progress

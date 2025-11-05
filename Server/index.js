@@ -21,8 +21,8 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }));
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(session({
   secret: 'dev-secret-change-me',
   resave: false,

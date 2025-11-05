@@ -4,6 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import 'goal_detail_page.dart';
 import 'goal_form_page.dart';
 import '../../../services/goal_service.dart';
+import 'dart:convert';
 
 /// GoalPage - Redesigned to match login style with custom header, streak card, and goal list
 class GoalPage extends StatefulWidget {
@@ -177,6 +178,7 @@ class _GoalPageState extends State<GoalPage> {
                         durationText: _durationTextFrom(g),
                         streakText: _streakTextFrom(g),
                         completed: (g['status'] == 'completed'),
+                        goalPicture: g['goal_picture'] as String?, // เพิ่มรูปภาพ
                       ),
                     ),
                 ],
@@ -200,6 +202,7 @@ class _GoalCard extends StatelessWidget {
   final String durationText;
   final String streakText;
   final bool completed;
+  final String? goalPicture; // เพิ่ม parameter สำหรับรูปภาพ
 
   const _GoalCard({
     required this.title,
@@ -211,6 +214,7 @@ class _GoalCard extends StatelessWidget {
     required this.durationText,
     required this.streakText,
     required this.completed,
+    this.goalPicture, // เพิ่ม parameter
   });
 
   @override
@@ -252,14 +256,27 @@ class _GoalCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: themeColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(icon, color: themeColor),
-                  ),
+                  // แสดงรูปภาพถ้ามี ไม่งั้นแสดง icon
+                  goalPicture != null && goalPicture!.isNotEmpty
+                      ? Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: _getImageProvider(goalPicture!),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: themeColor.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: themeColor),
+                        ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -561,6 +578,21 @@ class _GradientActionButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// Helper function to get image provider (รองรับทั้ง base64 และ URL)
+ImageProvider _getImageProvider(String imageData) {
+  if (imageData.startsWith('data:image')) {
+    // Base64 encoded image
+    final base64String = imageData.split(',').last;
+    return MemoryImage(base64Decode(base64String));
+  } else if (imageData.startsWith('http')) {
+    // URL image
+    return NetworkImage(imageData);
+  } else {
+    // Fallback to asset
+    return const AssetImage('assets/images/placeholder.png');
   }
 }
 
