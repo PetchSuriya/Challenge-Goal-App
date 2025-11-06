@@ -338,6 +338,22 @@ app.get('/api/goals/:id', requireAuth, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
 });
 
+// Delete a goal owned by the current user
+app.delete('/api/goals/:id', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid id' });
+    // Only allow deleting your own goal (each participant has their own row)
+    const result = await dbModule.deleteGoalCascade(id, req.session.user.id);
+    if (!result.ok && result.reason === 'not_found') return res.status(404).json({ error: 'Not found' });
+    if (!result.ok && result.reason === 'forbidden') return res.status(403).json({ error: 'Forbidden' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'DB error' });
+  }
+});
+
 app.get('/api/goals/:id/logs', requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);

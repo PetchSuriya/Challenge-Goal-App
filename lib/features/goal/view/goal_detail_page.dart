@@ -54,6 +54,8 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   DateTime? _selectedDay;
   final Set<DateTime> _doneDays = <DateTime>{}; // normalized to Y-M-D
   int? goalId;
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   double get progress => totalDays == 0 ? 0 : completed / totalDays;
   int get remaining => (totalDays - completed).clamp(0, totalDays);
@@ -62,6 +64,54 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   int get todayIndex {
     final day = DateTime.now().day - 1;
     return day.clamp(0, totalDays > 0 ? totalDays - 1 : 0);
+  }
+
+  DateTime? _tryParseDate(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return _normalize(v);
+    if (v is int) {
+      try {
+        // treat as millisecondsSinceEpoch if looks like epoch ms
+        final dt = DateTime.fromMillisecondsSinceEpoch(v, isUtc: false);
+        return _normalize(dt);
+      } catch (_) {}
+    }
+    final s = v.toString();
+    // handle numeric string epoch
+    if (RegExp(r'^\d{10,13}$').hasMatch(s)) {
+      try {
+        final ms = s.length == 13 ? int.parse(s) : int.parse(s) * 1000;
+        return _normalize(DateTime.fromMillisecondsSinceEpoch(ms));
+      } catch (_) {}
+    }
+    // handle numeric string epoch (seconds or milliseconds)
+    if (RegExp(r'^\d+$').hasMatch(s)) {
+      try {
+        final isMs = s.length >= 13;
+        final ms = isMs ? int.parse(s) : int.parse(s) * 1000;
+        return _normalize(DateTime.fromMillisecondsSinceEpoch(ms));
+      } catch (_) {}
+    }
+    final dt = DateTime.tryParse(s);
+    return dt != null ? _normalize(dt) : null;
+  }
+
+  bool _isInRange(DateTime d) {
+    if (_startDate == null || _endDate == null) return false;
+    final sd = _normalize(_startDate!);
+    final ed = _normalize(_endDate!);
+    if (ed.isBefore(sd)) return false;
+    return (d.isAtSameMomentAs(sd) || d.isAfter(sd)) && (d.isAtSameMomentAs(ed) || d.isBefore(ed));
+  }
+
+  bool _isRangeStart(DateTime d) {
+    if (_startDate == null) return false;
+    return _isSameDay(_normalize(d), _normalize(_startDate!));
+  }
+
+  bool _isRangeEnd(DateTime d) {
+    if (_endDate == null) return false;
+    return _isSameDay(_normalize(d), _normalize(_endDate!));
   }
 
   @override
@@ -118,12 +168,24 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       setState(() {
         title = (g['title'] ?? title) as String;
         category = (g['type'] == 'group') ? 'Mutual' : (g['category'] ?? category);
+        // Parse start/end date from backend (accept snake_case or camelCase)
+        final sdRaw = g['start_date'] ?? g['startDate'];
+        final edRaw = g['end_date'] ?? g['endDate'];
+        final parsedStart = _tryParseDate(sdRaw);
+        final parsedEnd = _tryParseDate(edRaw);
+        _startDate = parsedStart;
         final int? dur = g['duration_days'] is int
             ? g['duration_days'] as int
             : int.tryParse('${g['duration_days'] ?? ''}') ?? _extractInt('${g['duration'] ?? ''}');
         if (dur != null && dur > 0) {
           totalDays = dur;
           daysDone = List<bool>.filled(totalDays, false);
+        }
+        // If endDate missing, compute from startDate + duration
+        if (_startDate != null) {
+          _endDate = parsedEnd ?? _startDate!.add(Duration(days: (totalDays > 0 ? totalDays - 1 : 0)));
+        } else {
+          _endDate = parsedEnd;
         }
         final int prog = g['progress_days'] is int ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
         completed = prog.clamp(0, totalDays);
@@ -252,14 +314,32 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Goal deleted'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      // For demo, just pop back
-      context.go(AppConstants.goalRoute);
+      try {
+        if (goalId != null) {
+          await _goalService.deleteGoal(goalId!);
+        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Goal deleted'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Prefer popping with a result so the list can refresh; fallback to go if not possible
+        if (Navigator.of(context).canPop()) {
+          context.pop('deleted');
+        } else {
+          context.go(AppConstants.goalRoute);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delete failed: ${e is Exception ? e.toString().replaceFirst("Exception: ", "") : e}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -280,39 +360,84 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     bool isDone = false,
     bool isToday = false,
     bool isSelected = false,
+    bool inRange = false,
+    bool isRangeStart = false,
+    bool isRangeEnd = false,
   }) {
-    Color bg;
-    Color fg;
-    BoxBorder? border;
-
-    if (isDone) {
-      bg = Colors.green.shade600;
-      fg = Colors.white;
-    } else if (isToday) {
-      bg = Colors.purple.shade600;
-      fg = Colors.white;
-    } else if (isSelected) {
-      bg = Colors.purple.shade100;
-      fg = Colors.purple.shade900;
-      border = Border.all(color: Colors.purple, width: 1.5);
-    } else {
-      bg = Colors.grey.shade200;
-      fg = Colors.black87;
+    // Priority: Done > Today > Selected > InRange > Default
+    if (isDone || isToday || isSelected) {
+      Color bg;
+      Color fg;
+      BoxBorder? border;
+      if (isDone) {
+        bg = Colors.green.shade600;
+        fg = Colors.white;
+      } else if (isToday) {
+        bg = Colors.purple.shade600;
+        fg = Colors.white;
+      } else {
+        bg = Colors.purple.shade100;
+        fg = Colors.purple.shade900;
+        border = Border.all(color: Colors.purple, width: 1.5);
+      }
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: bg,
+          shape: BoxShape.circle,
+          border: border,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$dayNumber',
+          style: TextStyle(
+            color: fg,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
     }
 
+    if (inRange) {
+      // Light purple background for in-range days, with rounded edges on boundaries
+      final radius = BorderRadius.horizontal(
+        left: isRangeStart ? const Radius.circular(18) : Radius.zero,
+        right: isRangeEnd ? const Radius.circular(18) : Radius.zero,
+      );
+      return Container(
+        width: double.infinity,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.purple.shade100.withOpacity(0.6),
+          borderRadius: radius,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$dayNumber',
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+
+    // Default style for out-of-range not-done days
     return Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: bg,
+        color: Colors.grey.shade200,
         shape: BoxShape.circle,
-        border: border,
       ),
       alignment: Alignment.center,
       child: Text(
         '$dayNumber',
-        style: TextStyle(
-          color: fg,
+        style: const TextStyle(
+          color: Colors.black87,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
@@ -599,17 +724,47 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           defaultBuilder: (context, day, focusedDay) {
                             final d = _normalize(day);
                             final isDone = _doneDays.contains(d);
-                            return _buildDayCell(day.day, isDone: isDone, isToday: _isSameDay(d, _normalize(DateTime.now())));
+                            final inRange = _isInRange(d);
+                            final isStart = _isRangeStart(d);
+                            final isEnd = _isRangeEnd(d);
+                            return _buildDayCell(
+                              day.day,
+                              isDone: isDone,
+                              isToday: _isSameDay(d, _normalize(DateTime.now())),
+                              inRange: inRange,
+                              isRangeStart: isStart,
+                              isRangeEnd: isEnd,
+                            );
                           },
                           todayBuilder: (context, day, focusedDay) {
                             final d = _normalize(day);
                             final isDone = _doneDays.contains(d);
-                            return _buildDayCell(day.day, isDone: isDone, isToday: true);
+                            final inRange = _isInRange(d);
+                            final isStart = _isRangeStart(d);
+                            final isEnd = _isRangeEnd(d);
+                            return _buildDayCell(
+                              day.day,
+                              isDone: isDone,
+                              isToday: true,
+                              inRange: inRange,
+                              isRangeStart: isStart,
+                              isRangeEnd: isEnd,
+                            );
                           },
                           selectedBuilder: (context, day, focusedDay) {
                             final d = _normalize(day);
                             final isDone = _doneDays.contains(d);
-                            return _buildDayCell(day.day, isDone: isDone, isSelected: true);
+                            final inRange = _isInRange(d);
+                            final isStart = _isRangeStart(d);
+                            final isEnd = _isRangeEnd(d);
+                            return _buildDayCell(
+                              day.day,
+                              isDone: isDone,
+                              isSelected: true,
+                              inRange: inRange,
+                              isRangeStart: isStart,
+                              isRangeEnd: isEnd,
+                            );
                           },
                         ),
                       ),

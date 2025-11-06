@@ -83,4 +83,15 @@ class GoalService {
       throw Exception(msg);
     }
   }
+
+  Future<void> deleteGoal(int goalId) async {
+    final res = await _http.delete('${ApiConfig.goalsEndpoint()}/$goalId');
+    if (res.statusCode != 200) {
+      final data = res.data;
+      final msg = (data is Map && data['error'] is String)
+          ? data['error'] as String
+          : 'Failed to delete goal';
+      throw Exception(msg);
+    }
+  }
 }

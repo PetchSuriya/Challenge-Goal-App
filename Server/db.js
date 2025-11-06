@@ -336,6 +336,18 @@ async function setGoalStatus(goalId, status) {
   return { ok: true };
 }
 
+// Delete a goal and related rows (only if it belongs to the requesting user)
+async function deleteGoalCascade(goalId, userId) {
+  const row = await get('SELECT goal_id, user_id FROM goals WHERE goal_id = ? LIMIT 1', [goalId]);
+  if (!row) return { ok: false, reason: 'not_found' };
+  if (row.user_id !== userId) return { ok: false, reason: 'forbidden' };
+  // Remove logs, participants, and the goal itself
+  await run('DELETE FROM goal_logs WHERE goal_id = ?', [goalId]);
+  await run('DELETE FROM goal_participants WHERE goal_id = ?', [goalId]);
+  await run('DELETE FROM goals WHERE goal_id = ?', [goalId]);
+  return { ok: true };
+}
+
 
 async function createAvatar(userId, name = 'Hero') {
   const res = await run('INSERT INTO avatars (user_id, name, appearance) VALUES (?, ?, ?)', [userId, name, '']);
@@ -431,6 +443,7 @@ module.exports = {
   logGoalProgress,
   getLogsForGoal,
   setGoalStatus,
+  deleteGoalCascade,
   // avatars/items helpers
   // returns avatars for a user
   async getAvatarsByUser(userId) {

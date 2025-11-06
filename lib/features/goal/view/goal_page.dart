@@ -186,6 +186,7 @@ class _GoalPageState extends State<GoalPage> {
                         streakText: _streakTextFrom(g),
                         completed: (g['status'] == 'completed'),
                         goalPicture: g['goal_picture'] as String?, // เพิ่มรูปภาพ
+                        onRefresh: _loadGoals,
                       ),
                     ),
                 ],
@@ -211,6 +212,7 @@ class _GoalCard extends StatelessWidget {
   final String streakText;
   final bool completed;
   final String? goalPicture; // เพิ่ม parameter สำหรับรูปภาพ
+  final Future<void> Function()? onRefresh; // callback to refresh list after returning
 
   const _GoalCard({
     this.goalId,
@@ -224,13 +226,14 @@ class _GoalCard extends StatelessWidget {
     required this.streakText,
     required this.completed,
     this.goalPicture, // เพิ่ม parameter
+    this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () {
+      onTap: () async {
         final totalDays = _extractFirstInt(durationText) ?? 30;
         final completedApprox = (progress * totalDays).round();
         final streak = _extractFirstInt(streakText) ?? 0;
@@ -248,8 +251,10 @@ class _GoalCard extends StatelessWidget {
           friendName: 'Friend',
           friendCompleted: friendCompletedApprox,
         );
-        if (context.mounted) {
-          context.push(AppConstants.goalDetailRoute, extra: args);
+        if (!context.mounted) return;
+        final result = await context.push(AppConstants.goalDetailRoute, extra: args);
+        if (result == 'deleted' && onRefresh != null) {
+          await onRefresh!();
         }
       },
       child: Card(
