@@ -46,6 +46,12 @@ class _GoalPageState extends State<GoalPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter goals by type according to current tab
+    List<Map<String, dynamic>> filteredGoals = _goals.where((g) {
+      final t = _normalizedType(g);
+      return _showMutual ? t == 'mutual' : t == 'personal';
+    }).toList();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -143,7 +149,7 @@ class _GoalPageState extends State<GoalPage> {
                   )
                 else
                   Text(
-                    '${_goals.length} active',
+                    '${filteredGoals.length} active',
                     style: const TextStyle(color: Colors.black, fontSize: 14),
                   ),
               ],
@@ -153,7 +159,7 @@ class _GoalPageState extends State<GoalPage> {
 
             if (_loading)
               const SizedBox.shrink()
-            else if (_goals.isEmpty)
+            else if (filteredGoals.isEmpty)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -165,14 +171,15 @@ class _GoalPageState extends State<GoalPage> {
             else
               Column(
                 children: [
-                  for (final g in _goals)
+                  for (final g in filteredGoals)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _GoalCard(
+                        goalId: _parseInt(g['id']),
                         title: g['title'] ?? 'Untitled',
-                        category: g['type'] == 'group' ? 'Mutual' : (g['category'] ?? 'Personal'),
-                        icon: (g['type'] == 'group') ? Icons.groups_2_outlined : Icons.flag,
-                        themeColor: (g['type'] == 'group') ? Colors.deepPurple : Colors.purple,
+                        category: _normalizedType(g) == 'mutual' ? 'Mutual' : 'Personal',
+                        icon: _normalizedType(g) == 'mutual' ? Icons.groups_2_outlined : Icons.flag,
+                        themeColor: _normalizedType(g) == 'mutual' ? Colors.deepPurple : Colors.purple,
                         progress: _progressFrom(g),
                         secondProgress: null,
                         durationText: _durationTextFrom(g),
@@ -193,6 +200,7 @@ class _GoalPageState extends State<GoalPage> {
 // Removed previous mutual participants demo to focus on specified single-card goal UI
 
 class _GoalCard extends StatelessWidget {
+  final int? goalId;
   final String title;
   final String category;
   final IconData icon;
@@ -205,6 +213,7 @@ class _GoalCard extends StatelessWidget {
   final String? goalPicture; // เพิ่ม parameter สำหรับรูปภาพ
 
   const _GoalCard({
+    this.goalId,
     required this.title,
     required this.category,
     required this.icon,
@@ -229,6 +238,7 @@ class _GoalCard extends StatelessWidget {
             secondProgress != null || category.toLowerCase().contains('mutual');
         final friendCompletedApprox = ((secondProgress ?? 0) * totalDays).round();
         final args = GoalDetailArgs(
+          goalId: goalId,
           title: title,
           category: category,
           totalDays: totalDays,
@@ -615,4 +625,19 @@ String _durationTextFrom(Map<String, dynamic> g) {
 String _streakTextFrom(Map<String, dynamic> g) {
   final int prog = (g['progress_days'] is int) ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
   return '$prog day streak';
+}
+
+// Normalize goal type to either 'personal' or 'mutual'
+String _normalizedType(Map<String, dynamic> g) {
+  final raw = ('${g['type'] ?? ''}').toLowerCase().trim();
+  if (raw == 'mutual' || raw == 'mutal' || raw == 'group') return 'mutual';
+  if (raw == 'personal' || raw == 'single') return 'personal';
+  // default to personal if unknown/missing
+  return 'personal';
+}
+
+int? _parseInt(dynamic v) {
+  if (v is int) return v;
+  if (v == null) return null;
+  return int.tryParse('$v');
 }

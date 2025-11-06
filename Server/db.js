@@ -6,7 +6,7 @@ const seedInventory = require('./scripts/seed_inventory');
 const seedAll = require('./scripts/seed_all');
 const createSchema = require('./scripts/schema');
 
-const DB_PATH = path.join(__dirname, 'data.db');
+const DB_PATH = path.join(__dirname, 'data.db'); 
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
