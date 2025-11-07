@@ -76,3 +76,21 @@ flutter doctor -v
 ```
 
 If you run into errors, copy the output of `flutter doctor -v` and the failing `flutter run` output and paste them here so I can help diagnose.
+
+Profile image persistence
+- When you change your profile picture, the app saves a permanent copy under the app documents folder and links it to your user ID.
+- The local image survives app restarts and even logout/login. On login, the app auto-detects the latest saved image for your user and restores it.
+- On Android emulator, the saved image stays inside the emulator’s app storage. If you wipe the emulator data or uninstall the app, the image file is removed.
+
+Backend quick start (optional)
+- The included Node.js backend lives in `Server/`.
+- To run it on Windows PowerShell:
+
+```powershell
+cd .\Server
+npm install
+npm start
+```
+
+- It listens on http://localhost:3000.
+- Flutter web uses http://localhost:3000 by default; Android emulator should use http://10.0.2.2:3000 if you point the app to it.

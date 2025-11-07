@@ -137,6 +137,40 @@ class ImageService {
 
   /// === Helper Methods ===
 
+  /// ค้นหารูปโปรไฟล์ล่าสุดของผู้ใช้จากโฟลเดอร์เก็บรูปของแอป
+  ///
+  /// Parameters:
+  /// - userId: ID ของผู้ใช้
+  ///
+  /// Return: String? - path ของรูปภาพล่าสุด ถ้าไม่พบให้คืนค่า null
+  static Future<String?> findLatestProfileImage(String userId) async {
+    try {
+      if (kIsWeb) return null; // บนเว็บไม่รองรับไฟล์ระบบแบบถาวร
+
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String profileImagesDir = path.join(appDir.path, 'profile_images');
+      final Directory dir = Directory(profileImagesDir);
+      if (!await dir.exists()) return null;
+
+      final List<FileSystemEntity> files = await dir.list().toList();
+      final List<File> userFiles = files
+          .whereType<File>()
+          .where((f) => path.basename(f.path).startsWith('profile_$userId'))
+          .toList();
+
+      if (userFiles.isEmpty) return null;
+
+      // หาไฟล์ที่ใหม่ที่สุด
+      userFiles.sort((a, b) => File(b.path)
+          .lastModifiedSync()
+          .compareTo(File(a.path).lastModifiedSync()));
+      return userFiles.first.path;
+    } catch (e) {
+      debugPrint('Error finding latest profile image: $e');
+      return null;
+    }
+  }
+
   /// ลบไฟล์โปรไฟล์เก่าของผู้ใช้เพื่อประหยัด storage
   ///
   /// Parameters:
