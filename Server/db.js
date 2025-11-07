@@ -336,6 +336,22 @@ async function setGoalStatus(goalId, status) {
   return { ok: true };
 }
 
+// Delete a log for a specific day; if it was the last log for that day, decrement participant progress
+async function deleteLogForDay(goalId, userId, date) {
+  if (!date) throw new Error('Missing date');
+  const before = await get('SELECT COUNT(1) as c FROM goal_logs WHERE goal_id = ? AND user_id = ? AND date = ?', [goalId, userId, date]);
+  if (!before || !before.c) return { removed: false };
+  await run('DELETE FROM goal_logs WHERE goal_id = ? AND user_id = ? AND date = ?', [goalId, userId, date]);
+  const after = await get('SELECT COUNT(1) as c FROM goal_logs WHERE goal_id = ? AND user_id = ? AND date = ?', [goalId, userId, date]);
+  const decremented = (before.c > 0 && after && after.c === 0);
+  if (decremented) {
+    try {
+      await run('UPDATE goal_participants SET progress_days = CASE WHEN progress_days > 0 THEN progress_days - 1 ELSE 0 END WHERE goal_id = ? AND user_id = ?', [goalId, userId]);
+    } catch (e) { /* ignore */ }
+  }
+  return { removed: true, decremented };
+}
+
 // Delete a goal and related rows (only if it belongs to the requesting user)
 async function deleteGoalCascade(goalId, userId) {
   const row = await get('SELECT goal_id, user_id FROM goals WHERE goal_id = ? LIMIT 1', [goalId]);
@@ -443,6 +459,7 @@ module.exports = {
   logGoalProgress,
   getLogsForGoal,
   setGoalStatus,
+  deleteLogForDay,
   deleteGoalCascade,
   // avatars/items helpers
   // returns avatars for a user

@@ -124,10 +124,7 @@ class _GoalPageState extends State<GoalPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Current Streak Card
-            const _CurrentStreakCard(days: 12, totalDays: 100, percent: 0.12),
-
-            const SizedBox(height: 16),
+            // (Removed Current Streak Card per request)
 
             // Header: Your Goals
             Row(
@@ -175,7 +172,7 @@ class _GoalPageState extends State<GoalPage> {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _GoalCard(
-                        goalId: _parseInt(g['id']),
+                        goalId: _parseInt(g['goal_id'] ?? g['id']),
                         title: g['title'] ?? 'Untitled',
                         category: _normalizedType(g) == 'mutual' ? 'Mutual' : 'Personal',
                         icon: _normalizedType(g) == 'mutual' ? Icons.groups_2_outlined : Icons.flag,
@@ -253,7 +250,7 @@ class _GoalCard extends StatelessWidget {
         );
         if (!context.mounted) return;
         final result = await context.push(AppConstants.goalDetailRoute, extra: args);
-        if (result == 'deleted' && onRefresh != null) {
+        if ((result == 'deleted' || result == 'updated') && onRefresh != null) {
           await onRefresh!();
         }
       },
@@ -473,81 +470,7 @@ int? _extractFirstInt(String text) {
   return null;
 }
 
-class _CurrentStreakCard extends StatelessWidget {
-  final int days;
-  final int totalDays;
-  final double percent;
-  const _CurrentStreakCard({
-    required this.days,
-    required this.totalDays,
-    required this.percent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2.5,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.local_fire_department, color: Colors.amber),
-                const SizedBox(width: 8),
-                Text(
-                  'Current Streak',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Day $days',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' /$totalDays',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: percent,
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.purple),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${(percent * 100).round()}% Complete',
-              style: const TextStyle(color: Colors.black),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _CurrentStreakCard removed per request
 
 class _GradientActionButton extends StatelessWidget {
   final IconData icon;
