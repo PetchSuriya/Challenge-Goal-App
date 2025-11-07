@@ -46,6 +46,12 @@ class _GoalPageState extends State<GoalPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter goals by type according to current tab
+    List<Map<String, dynamic>> filteredGoals = _goals.where((g) {
+      final t = _normalizedType(g);
+      return _showMutual ? t == 'mutual' : t == 'personal';
+    }).toList();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -118,10 +124,7 @@ class _GoalPageState extends State<GoalPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Current Streak Card
-            const _CurrentStreakCard(days: 12, totalDays: 100, percent: 0.12),
-
-            const SizedBox(height: 16),
+            // (Removed Current Streak Card per request)
 
             // Header: Your Goals
             Row(
@@ -143,7 +146,7 @@ class _GoalPageState extends State<GoalPage> {
                   )
                 else
                   Text(
-                    '${_goals.length} active',
+                    '${filteredGoals.length} active',
                     style: const TextStyle(color: Colors.black, fontSize: 14),
                   ),
               ],
@@ -153,7 +156,7 @@ class _GoalPageState extends State<GoalPage> {
 
             if (_loading)
               const SizedBox.shrink()
-            else if (_goals.isEmpty)
+            else if (filteredGoals.isEmpty)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -165,20 +168,22 @@ class _GoalPageState extends State<GoalPage> {
             else
               Column(
                 children: [
-                  for (final g in _goals)
+                  for (final g in filteredGoals)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _GoalCard(
+                        goalId: _parseInt(g['goal_id'] ?? g['id']),
                         title: g['title'] ?? 'Untitled',
-                        category: g['type'] == 'group' ? 'Mutual' : (g['category'] ?? 'Personal'),
-                        icon: (g['type'] == 'group') ? Icons.groups_2_outlined : Icons.flag,
-                        themeColor: (g['type'] == 'group') ? Colors.deepPurple : Colors.purple,
+                        category: _normalizedType(g) == 'mutual' ? 'Mutual' : 'Personal',
+                        icon: _normalizedType(g) == 'mutual' ? Icons.groups_2_outlined : Icons.flag,
+                        themeColor: _normalizedType(g) == 'mutual' ? Colors.deepPurple : Colors.purple,
                         progress: _progressFrom(g),
                         secondProgress: null,
                         durationText: _durationTextFrom(g),
                         streakText: _streakTextFrom(g),
                         completed: (g['status'] == 'completed'),
                         goalPicture: g['goal_picture'] as String?, // เพิ่มรูปภาพ
+                        onRefresh: _loadGoals,
                       ),
                     ),
                 ],
@@ -193,6 +198,7 @@ class _GoalPageState extends State<GoalPage> {
 // Removed previous mutual participants demo to focus on specified single-card goal UI
 
 class _GoalCard extends StatelessWidget {
+  final int? goalId;
   final String title;
   final String category;
   final IconData icon;
@@ -203,8 +209,10 @@ class _GoalCard extends StatelessWidget {
   final String streakText;
   final bool completed;
   final String? goalPicture; // เพิ่ม parameter สำหรับรูปภาพ
+  final Future<void> Function()? onRefresh; // callback to refresh list after returning
 
   const _GoalCard({
+    this.goalId,
     required this.title,
     required this.category,
     required this.icon,
@@ -215,13 +223,14 @@ class _GoalCard extends StatelessWidget {
     required this.streakText,
     required this.completed,
     this.goalPicture, // เพิ่ม parameter
+    this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () {
+      onTap: () async {
         final totalDays = _extractFirstInt(durationText) ?? 30;
         final completedApprox = (progress * totalDays).round();
         final streak = _extractFirstInt(streakText) ?? 0;
@@ -229,6 +238,7 @@ class _GoalCard extends StatelessWidget {
             secondProgress != null || category.toLowerCase().contains('mutual');
         final friendCompletedApprox = ((secondProgress ?? 0) * totalDays).round();
         final args = GoalDetailArgs(
+          goalId: goalId,
           title: title,
           category: category,
           totalDays: totalDays,
@@ -238,8 +248,10 @@ class _GoalCard extends StatelessWidget {
           friendName: 'Friend',
           friendCompleted: friendCompletedApprox,
         );
-        if (context.mounted) {
-          context.push(AppConstants.goalDetailRoute, extra: args);
+        if (!context.mounted) return;
+        final result = await context.push(AppConstants.goalDetailRoute, extra: args);
+        if ((result == 'deleted' || result == 'updated') && onRefresh != null) {
+          await onRefresh!();
         }
       },
       child: Card(
@@ -458,81 +470,7 @@ int? _extractFirstInt(String text) {
   return null;
 }
 
-class _CurrentStreakCard extends StatelessWidget {
-  final int days;
-  final int totalDays;
-  final double percent;
-  const _CurrentStreakCard({
-    required this.days,
-    required this.totalDays,
-    required this.percent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2.5,
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.local_fire_department, color: Colors.amber),
-                const SizedBox(width: 8),
-                Text(
-                  'Current Streak',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Colors.grey.shade800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: 'Day $days',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' /$totalDays',
-                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: percent,
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.purple),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${(percent * 100).round()}% Complete',
-              style: const TextStyle(color: Colors.black),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _CurrentStreakCard removed per request
 
 class _GradientActionButton extends StatelessWidget {
   final IconData icon;
@@ -615,4 +553,19 @@ String _durationTextFrom(Map<String, dynamic> g) {
 String _streakTextFrom(Map<String, dynamic> g) {
   final int prog = (g['progress_days'] is int) ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
   return '$prog day streak';
+}
+
+// Normalize goal type to either 'personal' or 'mutual'
+String _normalizedType(Map<String, dynamic> g) {
+  final raw = ('${g['type'] ?? ''}').toLowerCase().trim();
+  if (raw == 'mutual' || raw == 'mutal' || raw == 'group') return 'mutual';
+  if (raw == 'personal' || raw == 'single') return 'personal';
+  // default to personal if unknown/missing
+  return 'personal';
+}
+
+int? _parseInt(dynamic v) {
+  if (v is int) return v;
+  if (v == null) return null;
+  return int.tryParse('$v');
 }

@@ -6,7 +6,7 @@ const seedInventory = require('./scripts/seed_inventory');
 const seedAll = require('./scripts/seed_all');
 const createSchema = require('./scripts/schema');
 
-const DB_PATH = path.join(__dirname, 'data.db');
+const DB_PATH = path.join(__dirname, 'data.db'); 
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
@@ -336,6 +336,34 @@ async function setGoalStatus(goalId, status) {
   return { ok: true };
 }
 
+// Delete a log for a specific day; if it was the last log for that day, decrement participant progress
+async function deleteLogForDay(goalId, userId, date) {
+  if (!date) throw new Error('Missing date');
+  const before = await get('SELECT COUNT(1) as c FROM goal_logs WHERE goal_id = ? AND user_id = ? AND date = ?', [goalId, userId, date]);
+  if (!before || !before.c) return { removed: false };
+  await run('DELETE FROM goal_logs WHERE goal_id = ? AND user_id = ? AND date = ?', [goalId, userId, date]);
+  const after = await get('SELECT COUNT(1) as c FROM goal_logs WHERE goal_id = ? AND user_id = ? AND date = ?', [goalId, userId, date]);
+  const decremented = (before.c > 0 && after && after.c === 0);
+  if (decremented) {
+    try {
+      await run('UPDATE goal_participants SET progress_days = CASE WHEN progress_days > 0 THEN progress_days - 1 ELSE 0 END WHERE goal_id = ? AND user_id = ?', [goalId, userId]);
+    } catch (e) { /* ignore */ }
+  }
+  return { removed: true, decremented };
+}
+
+// Delete a goal and related rows (only if it belongs to the requesting user)
+async function deleteGoalCascade(goalId, userId) {
+  const row = await get('SELECT goal_id, user_id FROM goals WHERE goal_id = ? LIMIT 1', [goalId]);
+  if (!row) return { ok: false, reason: 'not_found' };
+  if (row.user_id !== userId) return { ok: false, reason: 'forbidden' };
+  // Remove logs, participants, and the goal itself
+  await run('DELETE FROM goal_logs WHERE goal_id = ?', [goalId]);
+  await run('DELETE FROM goal_participants WHERE goal_id = ?', [goalId]);
+  await run('DELETE FROM goals WHERE goal_id = ?', [goalId]);
+  return { ok: true };
+}
+
 
 async function createAvatar(userId, name = 'Hero') {
   const res = await run('INSERT INTO avatars (user_id, name, appearance) VALUES (?, ?, ?)', [userId, name, '']);
@@ -431,6 +459,8 @@ module.exports = {
   logGoalProgress,
   getLogsForGoal,
   setGoalStatus,
+  deleteLogForDay,
+  deleteGoalCascade,
   // avatars/items helpers
   // returns avatars for a user
   async getAvatarsByUser(userId) {

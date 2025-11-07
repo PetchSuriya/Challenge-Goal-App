@@ -54,6 +54,10 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   DateTime? _selectedDay;
   final Set<DateTime> _doneDays = <DateTime>{}; // normalized to Y-M-D
   int? goalId;
+  DateTime? _startDate;
+  DateTime? _endDate;
+  bool _dirtyProgress = false; // track if user changed progress so list can refresh
+  bool _finishPrompted = false; // avoid repeated popups when reaching 100%
 
   double get progress => totalDays == 0 ? 0 : completed / totalDays;
   int get remaining => (totalDays - completed).clamp(0, totalDays);
@@ -62,6 +66,54 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   int get todayIndex {
     final day = DateTime.now().day - 1;
     return day.clamp(0, totalDays > 0 ? totalDays - 1 : 0);
+  }
+
+  DateTime? _tryParseDate(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return _normalize(v);
+    if (v is int) {
+      try {
+        // treat as millisecondsSinceEpoch if looks like epoch ms
+        final dt = DateTime.fromMillisecondsSinceEpoch(v, isUtc: false);
+        return _normalize(dt);
+      } catch (_) {}
+    }
+    final s = v.toString();
+    // handle numeric string epoch
+    if (RegExp(r'^\d{10,13}$').hasMatch(s)) {
+      try {
+        final ms = s.length == 13 ? int.parse(s) : int.parse(s) * 1000;
+        return _normalize(DateTime.fromMillisecondsSinceEpoch(ms));
+      } catch (_) {}
+    }
+    // handle numeric string epoch (seconds or milliseconds)
+    if (RegExp(r'^\d+$').hasMatch(s)) {
+      try {
+        final isMs = s.length >= 13;
+        final ms = isMs ? int.parse(s) : int.parse(s) * 1000;
+        return _normalize(DateTime.fromMillisecondsSinceEpoch(ms));
+      } catch (_) {}
+    }
+    final dt = DateTime.tryParse(s);
+    return dt != null ? _normalize(dt) : null;
+  }
+
+  bool _isInRange(DateTime d) {
+    if (_startDate == null || _endDate == null) return false;
+    final sd = _normalize(_startDate!);
+    final ed = _normalize(_endDate!);
+    if (ed.isBefore(sd)) return false;
+    return (d.isAtSameMomentAs(sd) || d.isAfter(sd)) && (d.isAtSameMomentAs(ed) || d.isBefore(ed));
+  }
+
+  bool _isRangeStart(DateTime d) {
+    if (_startDate == null) return false;
+    return _isSameDay(_normalize(d), _normalize(_startDate!));
+  }
+
+  bool _isRangeEnd(DateTime d) {
+    if (_endDate == null) return false;
+    return _isSameDay(_normalize(d), _normalize(_endDate!));
   }
 
   @override
@@ -103,9 +155,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
         _doneDays
           ..clear()
           ..addAll(logs.map((d) => DateTime(d.year, d.month, d.day)));
-        // Update summary counters based on count in current selection month
-        final now = DateTime.now();
-        completed = _doneDays.where((d) => d.year == now.year && d.month == now.month).length;
+        // Do NOT override overall completed here; keep backend progress_days value
       });
     } catch (e) {
       // keep UI usable even if logs fail
@@ -118,12 +168,24 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       setState(() {
         title = (g['title'] ?? title) as String;
         category = (g['type'] == 'group') ? 'Mutual' : (g['category'] ?? category);
+        // Parse start/end date from backend (accept snake_case or camelCase)
+        final sdRaw = g['start_date'] ?? g['startDate'];
+        final edRaw = g['end_date'] ?? g['endDate'];
+        final parsedStart = _tryParseDate(sdRaw);
+        final parsedEnd = _tryParseDate(edRaw);
+        _startDate = parsedStart;
         final int? dur = g['duration_days'] is int
             ? g['duration_days'] as int
             : int.tryParse('${g['duration_days'] ?? ''}') ?? _extractInt('${g['duration'] ?? ''}');
         if (dur != null && dur > 0) {
           totalDays = dur;
           daysDone = List<bool>.filled(totalDays, false);
+        }
+        // If endDate missing, compute from startDate + duration
+        if (_startDate != null) {
+          _endDate = parsedEnd ?? _startDate!.add(Duration(days: (totalDays > 0 ? totalDays - 1 : 0)));
+        } else {
+          _endDate = parsedEnd;
         }
         final int prog = g['progress_days'] is int ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
         completed = prog.clamp(0, totalDays);
@@ -143,12 +205,28 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   void _markTodayDone() async {
     if (totalDays == 0) return;
     final idx = todayIndex;
-    if (daysDone[idx]) {
-      _showSnack('Today already completed');
-      return;
-    }
+    // Toggle behavior: if already done, remove the log
     final today = DateTime.now();
     final normalized = DateTime(today.year, today.month, today.day);
+  if (daysDone[idx]) {
+      // attempt toggle off
+      try {
+        if (goalId != null) {
+          await _goalService.deleteLog(goalId!, normalized);
+        }
+        setState(() {
+          daysDone[idx] = false;
+          _doneDays.removeWhere((d) => d.year == normalized.year && d.month == normalized.month && d.day == normalized.day);
+          completed = (completed - 1).clamp(0, totalDays);
+          currentStreak = 0; // simplistic reset; could recompute
+        });
+        _showSnack('Unmarked today');
+        _dirtyProgress = true;
+      } catch (e) {
+        _showSnack('Failed to unmark today');
+      }
+      return;
+    }
     // Call backend if goalId available
     try {
       if (goalId != null) {
@@ -166,6 +244,8 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
         }
       });
       _showSnack('Marked today as done');
+      _dirtyProgress = true;
+      await _maybePromptFinish();
     } catch (e) {
       _showSnack('Failed to mark today');
     }
@@ -180,6 +260,97 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       // set a long streak to reflect completion (optional)
       currentStreak = totalDays;
     });
+  }
+
+  Future<void> _maybePromptFinish() async {
+    if (totalDays <= 0) return;
+    if (completed < totalDays) return;
+    if (_finishPrompted) return;
+    _finishPrompted = true;
+    if (!mounted) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Icon header
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFD4C7A), Color(0xFF9B5BFF)],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.emoji_events, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Great job!',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "You've reached 100% for this goal. Do you want to finish it now?",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.purple,
+                        side: const BorderSide(color: Colors.purple),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                      ),
+                      child: const Text('Not now'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _GradientPrimaryButton(
+                      label: 'Finish Goal',
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirm == true) {
+      _finishGoal();
+      if (mounted) {
+        _showSnack('Goal finished!');
+      }
+    }
   }
 
   Future<void> _deleteGoal() async {
@@ -252,14 +423,32 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Goal deleted'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      // For demo, just pop back
-      context.go(AppConstants.goalRoute);
+      try {
+        if (goalId != null) {
+          await _goalService.deleteGoal(goalId!);
+        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Goal deleted'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // Prefer popping with a result so the list can refresh; fallback to go if not possible
+        if (Navigator.of(context).canPop()) {
+          context.pop('deleted');
+        } else {
+          context.go(AppConstants.goalRoute);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delete failed: ${e is Exception ? e.toString().replaceFirst("Exception: ", "") : e}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -280,39 +469,141 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     bool isDone = false,
     bool isToday = false,
     bool isSelected = false,
+    bool inRange = false,
+    bool isRangeStart = false,
+    bool isRangeEnd = false,
   }) {
-    Color bg;
-    Color fg;
-    BoxBorder? border;
+    // New visual rules:
+    // 1. Base purple stays visible for Today or in-range pill.
+    // 2. If Done overlaps with Today or inRange, show a smaller green inner circle overlay (or semi-transparent circle) keeping purple edges.
+    // 3. Non-today & out-of-range Done days: solid green circle.
+    // 4. Not done default: light gray circle (or purple pill if in range).
+    // 5. Selected (when not done) adds a purple border.
 
-    if (isDone) {
-      bg = Colors.green.shade600;
-      fg = Colors.white;
-    } else if (isToday) {
-      bg = Colors.purple.shade600;
-      fg = Colors.white;
-    } else if (isSelected) {
-      bg = Colors.purple.shade100;
-      fg = Colors.purple.shade900;
-      border = Border.all(color: Colors.purple, width: 1.5);
-    } else {
-      bg = Colors.grey.shade200;
-      fg = Colors.black87;
+    // Helper: text style
+    const dayStyleWhite = TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700);
+    const dayStyleDark = TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w700);
+    final dayNumberText = Text('$dayNumber', style: (isToday || isDone) ? dayStyleWhite : dayStyleDark);
+
+    // Case: Today or inRange base
+    if (isToday || inRange) {
+      // Build base (circle for today, pill for range)
+      final base = Container(
+        width: isToday ? 36 : double.infinity,
+        height: 36,
+        decoration: BoxDecoration(
+          color: isToday ? Colors.purple.shade600 : Colors.purple.shade100.withOpacity(0.6),
+          shape: isToday ? BoxShape.circle : BoxShape.rectangle,
+          borderRadius: isToday
+              ? null
+              : BorderRadius.horizontal(
+                  left: isRangeStart ? const Radius.circular(18) : Radius.zero,
+                  right: isRangeEnd ? const Radius.circular(18) : Radius.zero,
+                ),
+          border: (!isDone && isSelected)
+              ? Border.all(color: Colors.purple, width: 1.5)
+              : null,
+        ),
+      );
+
+      if (isDone) {
+        // Overlay small green circle keeping purple background visible
+        final overlayCircle = Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: Colors.green.shade600.withOpacity(0.85),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.shade600.withOpacity(0.4),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text('$dayNumber', style: dayStyleWhite),
+        );
+        return Stack(
+          alignment: Alignment.center,
+          children: [base, overlayCircle],
+        );
+      }
+      // Not done in today/range
+      return Stack(
+        alignment: Alignment.center,
+        children: [base, dayNumberText],
+      );
     }
 
+    // Case: Done (not today, not in range)
+    if (isDone) {
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.green.shade600,
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Text('$dayNumber', style: dayStyleWhite),
+      );
+    }
+
+    // Case: Selected (not done, not today, not in range)
+    if (isSelected) {
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.purple.shade100,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.purple, width: 1.5),
+        ),
+        alignment: Alignment.center,
+        child: Text('$dayNumber', style: TextStyle(color: Colors.purple.shade900, fontSize: 12, fontWeight: FontWeight.w700)),
+      );
+    }
+
+    if (inRange) {
+      // Light purple background for in-range days, with rounded edges on boundaries
+      final radius = BorderRadius.horizontal(
+        left: isRangeStart ? const Radius.circular(18) : Radius.zero,
+        right: isRangeEnd ? const Radius.circular(18) : Radius.zero,
+      );
+      return Container(
+        width: double.infinity,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.purple.shade100.withOpacity(0.6),
+          borderRadius: radius,
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$dayNumber',
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+
+    // Default style for out-of-range not-done days
     return Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: bg,
+        color: Colors.grey.shade200,
         shape: BoxShape.circle,
-        border: border,
       ),
       alignment: Alignment.center,
       child: Text(
         '$dayNumber',
-        style: TextStyle(
-          color: fg,
+        style: const TextStyle(
+          color: Colors.black87,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
@@ -331,13 +622,28 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppConstants.goalRoute),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              context.pop(_dirtyProgress ? 'updated' : null);
+            } else {
+              context.go(AppConstants.goalRoute);
+            }
+          },
         ),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         elevation: 1,
       ),
-      body: SafeArea(
+      body: WillPopScope(
+        onWillPop: () async {
+          // Intercept system back to propagate result to previous route
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(_dirtyProgress ? 'updated' : null);
+            return false;
+          }
+          return true;
+        },
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -507,36 +813,6 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
 
               const SizedBox(height: 12),
 
-              // Motivational message
-              Card(
-                elevation: 2.5,
-                surfaceTintColor: Colors.white,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Icon(Icons.emoji_events, color: Colors.amber),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          "Keep going! You’re on Day 12! Outstanding progress!",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 12),
 
               // Calendar
@@ -574,8 +850,8 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           // Mark done if not already
                           final d = _normalize(selectedDay);
                           final already = _doneDays.contains(d);
-                          if (!already) {
-                            try {
+                          try {
+                            if (!already) {
                               if (goalId != null) {
                                 await _goalService.logDay(goalId!, d, description: 'Marked via calendar');
                               }
@@ -584,9 +860,21 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                                 completed += 1;
                               });
                               _showSnack('Marked ${d.year}-${d.month}-${d.day}');
-                            } catch (e) {
-                              _showSnack('Failed to mark day');
+                              _dirtyProgress = true;
+                              await _maybePromptFinish();
+                            } else {
+                              if (goalId != null) {
+                                await _goalService.deleteLog(goalId!, d);
+                              }
+                              setState(() {
+                                _doneDays.removeWhere((x) => _isSameDay(x, d));
+                                completed = (completed - 1).clamp(0, totalDays);
+                              });
+                              _showSnack('Unmarked ${d.year}-${d.month}-${d.day}');
+                              _dirtyProgress = true;
                             }
+                          } catch (e) {
+                            _showSnack('Failed to toggle day');
                           }
                         },
                         onFormatChanged: (format) {
@@ -599,17 +887,47 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           defaultBuilder: (context, day, focusedDay) {
                             final d = _normalize(day);
                             final isDone = _doneDays.contains(d);
-                            return _buildDayCell(day.day, isDone: isDone, isToday: _isSameDay(d, _normalize(DateTime.now())));
+                            final inRange = _isInRange(d);
+                            final isStart = _isRangeStart(d);
+                            final isEnd = _isRangeEnd(d);
+                            return _buildDayCell(
+                              day.day,
+                              isDone: isDone,
+                              isToday: _isSameDay(d, _normalize(DateTime.now())),
+                              inRange: inRange,
+                              isRangeStart: isStart,
+                              isRangeEnd: isEnd,
+                            );
                           },
                           todayBuilder: (context, day, focusedDay) {
                             final d = _normalize(day);
                             final isDone = _doneDays.contains(d);
-                            return _buildDayCell(day.day, isDone: isDone, isToday: true);
+                            final inRange = _isInRange(d);
+                            final isStart = _isRangeStart(d);
+                            final isEnd = _isRangeEnd(d);
+                            return _buildDayCell(
+                              day.day,
+                              isDone: isDone,
+                              isToday: true,
+                              inRange: inRange,
+                              isRangeStart: isStart,
+                              isRangeEnd: isEnd,
+                            );
                           },
                           selectedBuilder: (context, day, focusedDay) {
                             final d = _normalize(day);
                             final isDone = _doneDays.contains(d);
-                            return _buildDayCell(day.day, isDone: isDone, isSelected: true);
+                            final inRange = _isInRange(d);
+                            final isStart = _isRangeStart(d);
+                            final isEnd = _isRangeEnd(d);
+                            return _buildDayCell(
+                              day.day,
+                              isDone: isDone,
+                              isSelected: true,
+                              inRange: inRange,
+                              isRangeStart: isStart,
+                              isRangeEnd: isEnd,
+                            );
                           },
                         ),
                       ),
@@ -646,21 +964,23 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                       onPressed: _markTodayDone,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _finishGoal,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.purple,
-                        side: const BorderSide(color: Colors.purple),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                  if (completed >= totalDays) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _finishGoal,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.purple,
+                          side: const BorderSide(color: Colors.purple),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
+                        child: const Text('Finish Goal'),
                       ),
-                      child: const Text('Finish Goal'),
                     ),
-                  ),
+                  ],
                 ],
               ),
               const SizedBox(height: 8),
@@ -684,6 +1004,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
               const SizedBox(height: 16),
             ],
           ),
+        ),
         ),
       ),
     );
