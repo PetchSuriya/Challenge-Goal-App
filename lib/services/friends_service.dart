@@ -2,6 +2,19 @@ import '../core/config/api_config.dart';
 import '../services/api_client.dart';
 import 'package:dio/dio.dart';
 
+// Helper to safely parse ints from dynamic values (int, String, or Map with id)
+int? _asInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is String) return int.tryParse(v);
+  if (v is Map) {
+    final id = v['id'];
+    if (id is int) return id;
+    if (id is String) return int.tryParse(id);
+  }
+  return null;
+}
+
 /// Service for managing friends functionality
 class FriendsService {
   final ApiClient _apiClient = ApiClient();
@@ -130,13 +143,13 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
+      id: _asInt(json['id']) ?? 0,
       username: json['username'],
       email: json['email'],
       profilePicture: json['profile_picture'],
       gender: json['gender'],
       birthday: json['birthday'],
-      avatarId: json['avatar_id'],
+      avatarId: _asInt(json['avatar_id']),
       createdAt: json['created_at'],
       status: json['status'],
       avatar: json['avatar'] != null ? Avatar.fromJson(json['avatar']) : null,
@@ -185,15 +198,16 @@ class Avatar {
 
   factory Avatar.fromJson(Map<String, dynamic> json) {
     return Avatar(
-      id: json['id'],
-      userId: json['user_id'],
+      id: _asInt(json['id']) ?? 0,
+      userId: _asInt(json['user_id']) ?? 0,
       name: json['name'],
       appearance: json['appearance'],
       equipment: json['equipment'],
-      head: json['head'],
-      body: json['body'],
-      hand: json['hand'],
-      accessory: json['accessory'],
+      head: _asInt(json['head']),
+      body: _asInt(json['body']),
+      hand: _asInt(json['hand']),
+      // 'accessory' may be an id or an object { id, ... } per backend response
+      accessory: _asInt(json['accessory']),
     );
   }
 
@@ -217,10 +231,7 @@ class FriendsData {
   final List<User> friends;
   final List<User> pending;
 
-  FriendsData({
-    required this.friends,
-    required this.pending,
-  });
+  FriendsData({required this.friends, required this.pending});
 
   factory FriendsData.fromJson(Map<String, dynamic> json) {
     return FriendsData(

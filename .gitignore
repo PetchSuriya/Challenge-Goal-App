@@ -122,3 +122,13 @@ app.*.map.json
 # Node.js
 # Ignore node_modules in any subfolder (e.g., Server/node_modules)
 **/node_modules/
+
+# Database
+Server/data.db
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+e2e-tests/screenshots/*.png
+!e2e-tests/screenshots/.gitkeep

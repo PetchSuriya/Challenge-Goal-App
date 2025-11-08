@@ -572,17 +572,26 @@ class _FriendsListPageState extends ConsumerState<FriendsListPage> {
 
   void _onAddFriend() {
     final TextEditingController searchCtrl = _dialogSearchController;
-    void performSearch() {
-      ref.read(friendsControllerProvider.notifier).searchUsers(searchCtrl.text);
-    }
+    ref.read(friendsControllerProvider.notifier).clearSearch();
 
     showDialog(
       context: context,
       builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (context, setState) {
+        return Consumer(
+          builder: (context, ref, child) {
             final results = ref.watch(friendsControllerProvider).searchResults;
             final isLoading = ref.watch(friendsControllerProvider).isLoading;
+            final pendingRequests = ref.watch(friendsControllerProvider).pendingRequests;
+            
+            Future<void> performSearch() async {
+              final query = searchCtrl.text.trim();
+              if (query.isEmpty) {
+                ref.read(friendsControllerProvider.notifier).clearSearch();
+                return;
+              }
+              await ref.read(friendsControllerProvider.notifier).searchUsers(query);
+            }
+            
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -609,12 +618,10 @@ class _FriendsListPageState extends ConsumerState<FriendsListPage> {
                       ),
                       suffixIcon: IconButton(
                         icon: Icon(Icons.search, color: Colors.blue.shade600),
-                        onPressed: () {
-                          setState(performSearch);
-                        },
+                        onPressed: performSearch,
                       ),
                     ),
-                    onSubmitted: (_) => setState(performSearch),
+                    onSubmitted: (_) => performSearch(),
                   ),
                   const SizedBox(height: 12),
                   if (isLoading)
@@ -622,12 +629,12 @@ class _FriendsListPageState extends ConsumerState<FriendsListPage> {
                       padding: EdgeInsets.all(8.0),
                       child: CircularProgressIndicator(),
                     )
-                  else if (results.isEmpty)
+                  else if (results.isEmpty && searchCtrl.text.trim().isNotEmpty)
                     Container(
                       alignment: Alignment.centerLeft,
                       child: const Text('No results'),
                     )
-                  else
+                  else if (results.isNotEmpty)
                     SizedBox(
                       height: 260,
                       width: double.maxFinite,
@@ -637,26 +644,44 @@ class _FriendsListPageState extends ConsumerState<FriendsListPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  onPressed: () {
+                    ref.read(friendsControllerProvider.notifier).clearSearch();
+                    Navigator.of(dialogCtx).pop();
+                  },
                   child: const Text('Close'),
                   style: TextButton.styleFrom(foregroundColor: Colors.black87),
                 ),
                 TextButton(
-                  onPressed: () {
-                    setState(performSearch);
-                  },
+                  onPressed: performSearch,
                   child: const Text('Search'),
                   style: TextButton.styleFrom(foregroundColor: Colors.blueAccent),
                 ),
-                if (ref.read(friendsControllerProvider).pendingRequests.isNotEmpty)
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(dialogCtx).pop();
-                      _showIncomingRequests();
-                    },
-                    child: const Text('Requests'),
-                    style: TextButton.styleFrom(foregroundColor: Colors.blueGrey),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogCtx).pop();
+                    _showIncomingRequests();
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Text('Requests'),
+                      if (pendingRequests.isNotEmpty)
+                        Positioned(
+                          right: -8,
+                          top: -4,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                  style: TextButton.styleFrom(foregroundColor: Colors.blueGrey),
+                ),
               ],
             );
           },
@@ -683,25 +708,46 @@ class _FriendsListPageState extends ConsumerState<FriendsListPage> {
                 ),
                 child: const Icon(Icons.person_add, color: Colors.white, size: 18),
               ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text('People who added you', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
-              ),
-              if (pending.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text('${pending.length} requests', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'People who added you',
+                  style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              if (pending.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${pending.length}',
+                      style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w600, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: pending.isEmpty
-                ? const Text('No incoming friend requests')
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+            ),
+            child: SizedBox(
+              width: double.maxFinite,
+              child: pending.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Text('No incoming friend requests', textAlign: TextAlign.center),
+                  )
                 : ListView.separated(
                     shrinkWrap: true,
                     itemBuilder: (context, index) {
@@ -712,63 +758,95 @@ class _FriendsListPageState extends ConsumerState<FriendsListPage> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         margin: const EdgeInsets.symmetric(vertical: 6),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.purple.shade100,
-                            child: Text(req.username[0].toUpperCase(), style: TextStyle(color: Colors.purple.shade700, fontWeight: FontWeight.bold)),
-                          ),
-                          title: Text(req.username, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
-                          subtitle: Text(req.email ?? '', style: TextStyle(color: Colors.black54)),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  final ok = await ref.read(friendsControllerProvider.notifier).acceptFriendRequest(req.id);
-                                  if (!mounted) return;
-                                  Navigator.of(ctx).pop();
-                                  if (ok) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Accepted ${req.username}')),
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade600,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.purple.shade100,
+                                  child: Text(req.username[0].toUpperCase(), style: TextStyle(color: Colors.purple.shade700, fontWeight: FontWeight.bold)),
                                 ),
-                                child: const Text('Accept'),
-                              ),
-                              const SizedBox(width: 8),
-                              OutlinedButton(
-                                onPressed: () async {
-                                  final ok = await ref.read(friendsControllerProvider.notifier).unfriend(req.id);
-                                  if (!mounted) return;
-                                  Navigator.of(ctx).pop();
-                                  if (ok) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Declined ${req.username}')),
-                                    );
-                                  }
-                                },
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red.shade600,
-                                  side: BorderSide(color: Colors.red.shade100),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        req.username,
+                                        style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      if (req.email != null && req.email!.isNotEmpty)
+                                        Text(
+                                          req.email!,
+                                          style: TextStyle(color: Colors.black54, fontSize: 12),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                    ],
+                                  ),
                                 ),
-                                child: const Text('Decline'),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      final ok = await ref.read(friendsControllerProvider.notifier).acceptFriendRequest(req.id);
+                                      if (!mounted) return;
+                                      Navigator.of(ctx).pop();
+                                      if (ok) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Accepted ${req.username}')),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue.shade600,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: const Text('Accept', style: TextStyle(fontSize: 14)),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () async {
+                                      final ok = await ref.read(friendsControllerProvider.notifier).unfriend(req.id);
+                                      if (!mounted) return;
+                                      Navigator.of(ctx).pop();
+                                      if (ok) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Declined ${req.username}')),
+                                        );
+                                      }
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red.shade600,
+                                      side: BorderSide(color: Colors.red.shade100),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: const Text('Decline', style: TextStyle(fontSize: 14)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       );
                     },
                     separatorBuilder: (_, __) => const SizedBox(height: 6),
                     itemCount: pending.length,
                   ),
-          ),
+              ),
+            ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
