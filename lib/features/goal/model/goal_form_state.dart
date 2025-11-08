@@ -76,6 +76,7 @@ class GoalFormState {
     if (selectedGoalType == null) return 'Please select a goal type';
     if (durationDays == 0) return 'Please select date range';
     if (showDateRangeError) return 'Please select at least 7 days';
+    if (isMutualGoal && selectedFriends.isEmpty) return 'Please select at least one friend';
     return null;
   }
 }

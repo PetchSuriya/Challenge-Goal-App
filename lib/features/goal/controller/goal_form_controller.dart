@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../model/goal_form_state.dart';
 import '../../../services/goal_service.dart';
+import '../../../services/friends_service.dart';
 
 /// Goal Form Controller - จัดการ Business Logic ของ Goal Form
 class GoalFormController extends ChangeNotifier {
@@ -83,7 +84,7 @@ class GoalFormController extends ChangeNotifier {
     durationController.text = days.toString();
   }
 
-  /// Update selected friends
+  /// Update selected friends (names for UI; we'll map to IDs on submit)
   void updateSelectedFriends(List<String> friends) {
     _updateState(_state.copyWith(selectedFriends: friends));
   }
@@ -119,8 +120,24 @@ class GoalFormController extends ChangeNotifier {
     }
 
     // Prepare data
-    final type = _state.selectedGoalType == 'Mutual' ? 'group' : 'single';
+    final type = _state.selectedGoalType == 'Mutual' ? 'mutual' : 'single';
     final durationText = '${_state.durationDays} days';
+
+    // Determine friendId when mutual: map selected name to id from current friends list
+    int? friendId;
+    if (_state.isMutualGoal && _state.selectedFriends.isNotEmpty) {
+      try {
+  final friendsData = await FriendsService().getFriends();
+        final selectedName = _state.selectedFriends.first;
+        final match = friendsData.friends.firstWhere(
+          (u) => u.username.toLowerCase() == selectedName.toLowerCase(),
+          orElse: () => friendsData.friends.first,
+        );
+        friendId = match.id;
+      } catch (_) {
+        // ignore mapping failure; friendId stays null
+      }
+    }
 
     // Call API
     return await svc.createGoal(
@@ -129,6 +146,7 @@ class GoalFormController extends ChangeNotifier {
       durationText: durationText,
       category: _state.selectedCategory,
       type: type,
+      friendId: friendId,
       startDate: _state.selectedDateRange?.start,
       goalPicture: goalPictureBase64,
     );
