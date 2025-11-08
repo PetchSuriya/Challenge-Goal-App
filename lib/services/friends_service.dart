@@ -231,10 +231,7 @@ class FriendsData {
   final List<User> friends;
   final List<User> pending;
 
-  FriendsData({
-    required this.friends,
-    required this.pending,
-  });
+  FriendsData({required this.friends, required this.pending});
 
   factory FriendsData.fromJson(Map<String, dynamic> json) {
     return FriendsData(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../controller/home_controller.dart';
@@ -13,7 +16,8 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  String? _savedCostume;
+  // Saved/equipped costumes per slot
+  Map<String, String?> _savedBySlot = {'head': null, 'body': null};
   @override
   void initState() {
     super.initState();
@@ -21,22 +25,70 @@ class _HomePageState extends ConsumerState<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(homeControllerProvider.notifier).initialize();
     });
-    // load saved costume
-    _loadSavedCostume();
+    // load saved costumes (head/body)
+    _loadSavedCostumes();
   }
 
-  Future<void> _loadSavedCostume() async {
+  Future<void> _loadSavedCostumes() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(AppConstants.selectedCostumeKey);
+
+    // Load AssetManifest and build the set of available filenames so we can
+    // validate persisted values (avoid trying to load missing assets).
+    Set<String> available = <String>{};
+    try {
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+      for (final k in manifestMap.keys) {
+        if (k.startsWith('assets/images/') &&
+            (k.endsWith('.png') || k.endsWith('.jpg') || k.endsWith('.webp'))) {
+          available.add(k.split('/').last);
+        }
+      }
+    } catch (e) {
+      // If we can't read the manifest, fall back to trusting prefs.
+      available = <String>{};
+    }
+
+    // Read values from prefs
+    final headVal = prefs.getString(AppConstants.selectedCostumeHeadKey);
+    final bodyVal = prefs.getString(AppConstants.selectedCostumeBodyKey);
+
+    // If persisted value points to a missing asset, remove it (cleanup) and
+    // treat as null so we don't attempt to load a non-existent file.
+    String? headSanitized = headVal;
+    if (headSanitized != null &&
+        available.isNotEmpty &&
+        !available.contains(headSanitized)) {
+      await prefs.remove(AppConstants.selectedCostumeHeadKey);
+      headSanitized = null;
+    }
+
+    String? bodySanitized = bodyVal;
+    if (bodySanitized != null &&
+        available.isNotEmpty &&
+        !available.contains(bodySanitized)) {
+      await prefs.remove(AppConstants.selectedCostumeBodyKey);
+      bodySanitized = null;
+    }
+
+    if (!mounted) return;
     setState(() {
-      _savedCostume = saved;
+      _savedBySlot['head'] = headSanitized;
+      _savedBySlot['body'] = bodySanitized;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Compute a responsive avatar width: use up to 55% of screen width but
+    // cap at the configured maximum (AppConstants.avatarCostumeWidth).
+    // Reduced from 60% to 55% so avatar overlays have more room
+    // before reaching the bottom controls on smaller screens.
+    final screenW = MediaQuery.of(context).size.width;
+    final avatarW = math.min(screenW * 0.55, AppConstants.avatarCostumeWidth);
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -47,29 +99,41 @@ class _HomePageState extends ConsumerState<HomePage> {
             Expanded(
               child: Stack(
                 children: [
-                  // Avatar centered in the available space
-                  Center(
-                    child: Container(
-                      width: AppConstants.avatarCostumeWidth,
-                      height: AppConstants.avatarCostumeWidth,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
+                  // Goal Button at bottom. Use the device safe-area bottom inset
+                  // so the button sits lower on devices with on-screen nav bars
+                  // and doesn't overlap avatar overlays.
+                  Positioned(
+                    bottom: MediaQuery.of(context).viewPadding.bottom + 12,
+                    left: 16,
+                    right: 16,
+                    child: SizedBox(
+                      height: 64, // slightly smaller to reduce overlap
+                      child: _buildGoalButton(context),
+                    ),
+                  ),
+
+                  // Avatar raised up (closer to the top navigation / Friends button)
+                  Align(
+                    // Move avatar slightly lower (less negative) so overlays
+                    // have more vertical room and are not clipped or
+                    // overlapped by bottom buttons.
+                    alignment: const Alignment(0, -0.45),
+                    child: IgnorePointer(
+                      // Allow taps to pass through to buttons beneath when
+                      // avatar overlays overlap interactive controls.
+                      ignoring: true,
+                      child: SizedBox(
+                        width: avatarW,
+                        height: avatarW,
+                        // No background or shadow: show avatar directly on page
+                        child: Stack(
                           children: [
                             // Avatar base
                             Positioned.fill(
                               child: Image.asset(
                                 'assets/images/Avatar.png',
-                                width: AppConstants.avatarCostumeWidth,
-                                height: AppConstants.avatarCostumeWidth,
+                                width: avatarW,
+                                height: avatarW,
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) {
                                   return _buildFallbackAvatar();
@@ -77,43 +141,85 @@ class _HomePageState extends ConsumerState<HomePage> {
                               ),
                             ),
 
-                            // Hat overlay placed in the same layer and positioned relative
-                            // to the avatar using the shared alignment and per-costume offsets.
-                            if (_savedCostume != null)
+                            // Overlays for head and body (if present)
+                            // Head
+                            if (_savedBySlot['head'] != null)
                               Builder(
                                 builder: (context) {
-                                  final avatarW =
-                                      AppConstants.avatarCostumeWidth;
-                                  final avatarH = avatarW; // square avatar
-                                  final hatW =
+                                  final avatarH = avatarW;
+                                  final hatWBase =
                                       avatarW *
                                       AppConstants.costumeHatWidthFactor;
+                                  final hatScale =
+                                      AppConstants
+                                          .costumeScalesHome[_savedBySlot['head'] ??
+                                          ''] ??
+                                      1.0;
+                                  final hatW = hatWBase * hatScale;
                                   final alignY =
                                       AppConstants.costumeHatAlignmentY;
-
-                                  // alignmentY (-1..1) -> fraction from top (0..1)
                                   final fracFromTop = (alignY + 1) / 2;
-
-                                  // center Y position in pixels where the hat's center should be
                                   final centerY = avatarH * fracFromTop;
-
-                                  // top-left for the hat so that its center is at centerY
                                   final hatTop = centerY - (hatW / 2);
                                   final hatLeft = (avatarW - hatW) / 2;
-
-                                  // Apply per-costume pixel nudges (x, y)
-                                  final perOffset =
+                                  final norm =
                                       AppConstants
-                                          .costumeOffsets[_savedCostume ??
+                                          .costumeOffsetsHomeNormalized[_savedBySlot['head'] ??
                                           ''] ??
                                       Offset.zero;
-
+                                  final perOffset = Offset(
+                                    norm.dx * avatarW,
+                                    norm.dy * avatarW,
+                                  );
                                   return Positioned(
                                     left: hatLeft + perOffset.dx,
                                     top: hatTop + perOffset.dy,
                                     width: hatW,
                                     child: Image.asset(
-                                      'assets/images/$_savedCostume',
+                                      'assets/images/${_savedBySlot['head']}',
+                                      fit: BoxFit.contain,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const SizedBox.shrink(),
+                                    ),
+                                  );
+                                },
+                              ),
+
+                            // Body
+                            if (_savedBySlot['body'] != null)
+                              Builder(
+                                builder: (context) {
+                                  final bodyWBase =
+                                      avatarW *
+                                      AppConstants.costumeBodyWidthFactor;
+                                  final bodyScale =
+                                      AppConstants
+                                          .costumeScalesHome[_savedBySlot['body'] ??
+                                          ''] ??
+                                      1.0;
+                                  final bodyW = bodyWBase * bodyScale;
+                                  final alignY =
+                                      AppConstants.costumeBodyAlignmentY;
+                                  final fracFromTop = (alignY + 1) / 2;
+                                  final centerY = avatarW * fracFromTop;
+                                  final top = centerY - (bodyW / 2);
+                                  final left = (avatarW - bodyW) / 2;
+                                  final norm =
+                                      AppConstants
+                                          .costumeOffsetsHomeNormalized[_savedBySlot['body'] ??
+                                          ''] ??
+                                      Offset.zero;
+                                  final perOffset = Offset(
+                                    norm.dx * avatarW,
+                                    norm.dy * avatarW,
+                                  );
+                                  return Positioned(
+                                    left: left + perOffset.dx,
+                                    top: top + perOffset.dy,
+                                    width: bodyW,
+                                    child: Image.asset(
+                                      'assets/images/${_savedBySlot['body']}',
                                       fit: BoxFit.contain,
                                       errorBuilder:
                                           (context, error, stackTrace) =>
@@ -126,13 +232,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                       ),
                     ),
-
-                  // Goal Button at bottom with more margin to give avatar space
-                  Positioned(
-                    bottom: 60,
-                    left: 24,
-                    right: 24,
-                    child: _buildGoalButton(context),
                   ),
                 ],
               ),
@@ -356,9 +455,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildFallbackAvatar() {
+    final screenW = MediaQuery.of(context).size.width;
+    final width = math.min(screenW * 0.6, AppConstants.avatarCostumeWidth);
+
     return Container(
-      width: AppConstants.avatarCostumeWidth,
-      height: AppConstants.avatarCostumeWidth,
+      width: width,
+      height: width,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.grey.shade300, Colors.grey.shade400],
@@ -390,5 +492,4 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
   }
-
 }
