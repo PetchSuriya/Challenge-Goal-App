@@ -122,3 +122,6 @@ app.*.map.json
 # Node.js
 # Ignore node_modules in any subfolder (e.g., Server/node_modules)
 **/node_modules/
+
+
+Server/data.db

@@ -4,6 +4,7 @@ import '../features/profile/model/user_model.dart';
 import '../core/constants/app_constants.dart';
 import '../core/config/api_config.dart';
 import 'api_client.dart';
+import 'image_service.dart';
 
 /// Result classes for better error handling and type safety
 
@@ -119,7 +120,12 @@ class AuthService {
         final msg = _extractError(meRes) ?? 'Failed to load profile';
         return LoginResult.failure(msg);
       }
-      final user = _mapServerUserToModel(meRes.data);
+      var user = _mapServerUserToModel(meRes.data);
+      // Merge local persisted profile image (if any) so it survives logout/login
+      final latestLocal = await ImageService.findLatestProfileImage(user.id);
+      if (latestLocal != null && latestLocal.isNotEmpty) {
+        user = user.copyWith(profileImagePath: latestLocal);
+      }
       await _saveUserSession(user);
       return LoginResult.success(user);
     } catch (e) {
@@ -136,7 +142,12 @@ class AuthService {
       // Try fresh from server using session cookie
       final res = await _http.get(ApiConfig.meEndpoint);
       if (res.statusCode == 200 && res.data != null) {
-        final user = _mapServerUserToModel(res.data);
+        var user = _mapServerUserToModel(res.data);
+        // Hydrate with latest local profile image if present
+        final latestLocal = await ImageService.findLatestProfileImage(user.id);
+        if (latestLocal != null && latestLocal.isNotEmpty) {
+          user = user.copyWith(profileImagePath: latestLocal);
+        }
         await saveUserData(user);
         return ProfileResult.success(user);
       }

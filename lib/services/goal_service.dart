@@ -83,4 +83,30 @@ class GoalService {
       throw Exception(msg);
     }
   }
+
+  Future<void> deleteLog(int goalId, DateTime day) async {
+    final dateStr = '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    final res = await _http.delete(
+      ApiConfig.goalLogsEndpoint(goalId),
+      data: {'date': dateStr},
+    );
+    if (res.statusCode != 200) {
+      final data = res.data;
+      final msg = (data is Map && data['error'] is String)
+          ? data['error'] as String
+          : 'Failed to delete log';
+      throw Exception(msg);
+    }
+  }
+
+  Future<void> deleteGoal(int goalId) async {
+    final res = await _http.delete('${ApiConfig.goalsEndpoint()}/$goalId');
+    if (res.statusCode != 200) {
+      final data = res.data;
+      final msg = (data is Map && data['error'] is String)
+          ? data['error'] as String
+          : 'Failed to delete goal';
+      throw Exception(msg);
+    }
+  }
 }

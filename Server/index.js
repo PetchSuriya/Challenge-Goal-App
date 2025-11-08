@@ -338,6 +338,22 @@ app.get('/api/goals/:id', requireAuth, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
 });
 
+// Delete a goal owned by the current user
+app.delete('/api/goals/:id', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid id' });
+    // Only allow deleting your own goal (each participant has their own row)
+    const result = await dbModule.deleteGoalCascade(id, req.session.user.id);
+    if (!result.ok && result.reason === 'not_found') return res.status(404).json({ error: 'Not found' });
+    if (!result.ok && result.reason === 'forbidden') return res.status(403).json({ error: 'Forbidden' });
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'DB error' });
+  }
+});
+
 app.get('/api/goals/:id/logs', requireAuth, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -364,6 +380,24 @@ app.post('/api/goals/:id/logs', requireAuth, async (req, res) => {
       if (e && e.code === 'PARTICIPANT_COMPLETED') return res.status(400).json({ error: 'You have already completed this goal' });
       throw e;
     }
+  } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
+});
+
+// Remove a log for a specific date (toggle off)
+app.delete('/api/goals/:id/logs', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    // Accept date in body or query string
+    const date = (req.body && req.body.date) || (req.query && req.query.date);
+    if (!date) return res.status(400).json({ error: 'Missing date' });
+    // ensure user is a participant of the goal
+    const goal = await dbModule.getGoalById(id, req.session.user.id);
+    if (!goal) return res.status(404).json({ error: 'Not found' });
+    const participant = await dbModule.get('SELECT 1 FROM goal_participants WHERE goal_id = ? AND user_id = ? LIMIT 1', [id, req.session.user.id]);
+    if (!participant) return res.status(403).json({ error: 'Forbidden' });
+    const result = await dbModule.deleteLogForDay(id, req.session.user.id, date);
+    if (!result.removed) return res.status(404).json({ error: 'Log not found' });
+    res.json({ ok: true, decremented: !!result.decremented });
   } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
 });
 
