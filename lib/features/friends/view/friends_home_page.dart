@@ -23,9 +23,14 @@ class _FriendsHomePageState extends ConsumerState<FriendsHomePage> {
     super.initState();
     // Load friend's data when the page loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(friendsControllerProvider.notifier)
-          .loadFriendDetails(widget.friendId);
+      // Defensive: ensure friendId > 0 before loading
+      if (widget.friendId > 0) {
+        ref
+            .read(friendsControllerProvider.notifier)
+            .loadFriendDetails(widget.friendId);
+      } else {
+        ref.read(friendsControllerProvider.notifier).clearError();
+      }
     });
   }
 
