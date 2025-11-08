@@ -129,7 +129,7 @@ class _CostumePageState extends State<CostumePage> {
                   children: [
                     // Avatar base
                     Image.asset(
-                      'assets/images/avatar.png',
+                      'assets/images/Avatar.png',
                       width: avatarWidth,
                       height: avatarWidth,
                       fit: BoxFit.contain,
