@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
 import '../../../core/constants/app_constants.dart';
+import 'dart:math' as math;
 
 class CostumePage extends StatefulWidget {
   const CostumePage({super.key});
@@ -10,75 +13,245 @@ class CostumePage extends StatefulWidget {
   State<CostumePage> createState() => _CostumePageState();
 }
 
-class _CostumePageState extends State<CostumePage> {
-  // Hardcoded list of costume asset filenames (now located in assets/images/)
-  final List<String> _costumeFiles = [
-    'Black_Cap.png',
-    'Blue_Cap.png',
-    'Green_Cap.png',
-    'Red_Hat.png',
-    'White_Hat.png',
-    'Yellow_Hat.png',
-  ];
+class _CostumePageState extends State<CostumePage>
+    with SingleTickerProviderStateMixin {
+  // Per-slot costume lists populated from assets/images/.
+  // We'll populate these lists at runtime by reading AssetManifest.json so
+  // we don't have to maintain hard-coded filenames.
+  final Map<String, List<String>> _costumesBySlot = {'head': [], 'body': []};
 
-  int _windowStart =
-      0; // index for the leftmost visible costume (show 3 at a time)
-  String?
-  _previewCostume; // currently previewed costume filename (not yet saved)
+  late final TabController _tabController;
+  int _currentTabIndex = 0; // 0=head,1=body
+
+  // preview (not-saved) and saved maps per slot
+  final Map<String, String?> _previewBySlot = {'head': null, 'body': null};
+  final Map<String, String?> _savedBySlot = {'head': null, 'body': null};
+
+  static const List<String> _slots = ['head', 'body'];
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCostume();
-  }
-
-  Future<void> _loadSavedCostume() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(AppConstants.selectedCostumeKey);
-    if (!mounted) return;
-    setState(() {
-      _previewCostume = saved;
+    _tabController = TabController(length: _slots.length, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
     });
-  }
-
-  Future<void> _saveCostume() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (_previewCostume == null) {
-      await prefs.remove(AppConstants.selectedCostumeKey);
-    } else {
-      await prefs.setString(AppConstants.selectedCostumeKey, _previewCostume!);
-    }
-    // After saving, navigate back to dashboard/home
-    if (!mounted) return;
-    context.go(AppConstants.dashboardRoute);
-  }
-
-  void _moveLeft() {
-    setState(() {
-      _windowStart = (_windowStart - 1).clamp(0, _costumeFiles.length - 3);
-    });
-  }
-
-  void _moveRight() {
-    setState(() {
-      _windowStart = (_windowStart + 1).clamp(0, _costumeFiles.length - 3);
-    });
-  }
-
-  void _selectPreview(String fileName) {
-    setState(() {
-      _previewCostume = fileName;
+    // Populate costume lists from bundled assets, then load saved selections.
+    _populateCostumesFromAssetManifest().then((_) async {
+      await _sanitizeSavedCostumes();
+      await _loadSavedCostumes();
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    final visible = _costumeFiles.skip(_windowStart).take(3).toList();
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
-    // Use shared constants for avatar and hat sizing so positioning matches HomePage
-    final double avatarWidth = AppConstants.avatarCostumeWidth;
-    final double hatWidth = (avatarWidth * AppConstants.costumeHatWidthFactor)
-        .roundToDouble();
+  /// Populate `_costumesBySlot` by reading the Flutter AssetManifest.
+  /// This allows adding/removing costume files in `assets/images/` without
+  /// updating code. Filenames containing 'avatar' are ignored.
+  Future<void> _populateCostumesFromAssetManifest() async {
+    try {
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+
+      final imageKeys = manifestMap.keys.where((k) {
+        return k.startsWith('assets/images/') &&
+            (k.endsWith('.png') || k.endsWith('.jpg') || k.endsWith('.webp'));
+      }).toList();
+
+      // Clear existing lists
+      _costumesBySlot['head']!.clear();
+      _costumesBySlot['body']!.clear();
+
+      for (final key in imageKeys) {
+        final filename = key.split('/').last;
+        final lower = filename.toLowerCase();
+
+        // Skip avatar images
+        if (lower.contains('avatar')) continue;
+
+        // Heuristic classification
+        // - caps/hats => head
+        // - suits/dresses => body
+        // - shoes and high-heels are intentionally skipped entirely when the
+        //   "foot" slot is removed so they don't appear anywhere in the UI.
+        if (lower.contains('cap') || lower.contains('hat')) {
+          _costumesBySlot['head']!.add(filename);
+        } else if (lower.contains('hh') || lower.endsWith('_hh.png')) {
+          // Skip high-heels images (e.g. 'abc_hh.png') entirely so they
+          // don't appear in the CostumePage selection.
+          continue;
+        } else if (lower.contains('shoe') || lower.contains('shoes')) {
+          // Previously shoes were skipped when the foot slot existed or
+          // was removed. Treat shoes as body costumes so they appear in the
+          // Body tab (they will be positioned with the body offsets/scales).
+          _costumesBySlot['body']!.add(filename);
+        } else if (lower.contains('suit') || lower.contains('dress')) {
+          _costumesBySlot['body']!.add(filename);
+        } else {
+          // fallback: add to body
+          _costumesBySlot['body']!.add(filename);
+        }
+      }
+
+      // Sort lists for deterministic order
+      _costumesBySlot.forEach((k, v) => v.sort((a, b) => a.compareTo(b)));
+
+      if (!mounted) return;
+      setState(() {});
+    } catch (e) {
+      // If AssetManifest is unavailable for some reason, keep the lists empty.
+      // We intentionally swallow errors to avoid crashing on asset read.
+      // Consider logging the error in the future.
+    }
+  }
+
+  Future<void> _loadSavedCostumes() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _savedBySlot['head'] = prefs.getString(
+        AppConstants.selectedCostumeHeadKey,
+      );
+      _savedBySlot['body'] = prefs.getString(
+        AppConstants.selectedCostumeBodyKey,
+      );
+      // default preview mirrors saved selection
+      _previewBySlot['head'] = _savedBySlot['head'];
+      _previewBySlot['body'] = _savedBySlot['body'];
+    });
+  }
+
+  // Ensure saved costume filenames actually exist in the populated costume
+  // lists. If a saved filename is missing (file deleted), remove the pref so
+  // we don't attempt to load a non-existent asset.
+  Future<void> _sanitizeSavedCostumes() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Build a set of available filenames from the populated lists.
+    final available = <String>{};
+    for (final list in _costumesBySlot.values) {
+      for (final f in list) available.add(f);
+    }
+
+    // Head
+    final headPref = prefs.getString(AppConstants.selectedCostumeHeadKey);
+    if (headPref != null &&
+        available.isNotEmpty &&
+        !available.contains(headPref)) {
+      await prefs.remove(AppConstants.selectedCostumeHeadKey);
+      _savedBySlot['head'] = null;
+      _previewBySlot['head'] = null;
+    }
+
+    // Body
+    final bodyPref = prefs.getString(AppConstants.selectedCostumeBodyKey);
+    if (bodyPref != null &&
+        available.isNotEmpty &&
+        !available.contains(bodyPref)) {
+      await prefs.remove(AppConstants.selectedCostumeBodyKey);
+      _savedBySlot['body'] = null;
+      _previewBySlot['body'] = null;
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _saveCurrentSlot() async {
+    final prefs = await SharedPreferences.getInstance();
+    final slot = _slots[_currentTabIndex];
+    final val = _previewBySlot[slot];
+    final key = _slotToKey(slot);
+    if (val == null) {
+      await prefs.remove(key);
+      _savedBySlot[slot] = null;
+    } else {
+      await prefs.setString(key, val);
+      _savedBySlot[slot] = val;
+    }
+    if (!mounted) return;
+    // After saving, navigate back to dashboard/home
+    context.go(AppConstants.dashboardRoute);
+  }
+
+  String _slotToKey(String slot) {
+    switch (slot) {
+      case 'head':
+        return AppConstants.selectedCostumeHeadKey;
+      case 'body':
+        return AppConstants.selectedCostumeBodyKey;
+      default:
+        return AppConstants.selectedCostumeKey;
+    }
+  }
+
+  void _selectPreviewForSlot(String slot, String file) {
+    setState(() {
+      _previewBySlot[slot] = file;
+    });
+  }
+
+  void _clearPreviewForSlot(String slot) {
+    setState(() {
+      _previewBySlot[slot] = null;
+    });
+  }
+
+  Widget _buildOverlayFor(String file, String slot, double avatarWidth) {
+    double width = avatarWidth * AppConstants.costumeHatWidthFactor;
+    double alignX = 0;
+    double alignY = AppConstants.costumeHatAlignmentY;
+
+    // Only head and body slots exist now.
+    if (slot == 'body') {
+      width = avatarWidth * AppConstants.costumeBodyWidthFactor;
+      alignY = AppConstants.costumeBodyAlignmentY;
+    }
+
+    // Apply per-costume scale if provided (scales the computed width).
+    final perScale = AppConstants.costumeScalesPreview[file] ?? 1.0;
+    width = width * perScale;
+
+    // Use normalized offsets (fractions of avatar width) so placement adapts
+    // to different device sizes. Convert to pixels by multiplying by avatarWidth.
+    final norm =
+        AppConstants.costumeOffsetsPreviewNormalized[file] ?? Offset.zero;
+    final perOffset = Offset(norm.dx * avatarWidth, norm.dy * avatarWidth);
+    final lapPx = AppConstants.costumeLapOffsetYNormalized * avatarWidth;
+
+    return Align(
+      alignment: Alignment(alignX, alignY),
+      child: SizedBox(
+        width: width,
+        child: Transform.translate(
+          offset: perOffset + Offset(0, lapPx),
+          child: Image.asset(
+            'assets/images/$file',
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) =>
+                const SizedBox.shrink(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final slot = _slots[_currentTabIndex];
+    final available = _costumesBySlot[slot] ?? [];
+
+    final screenW = MediaQuery.of(context).size.width;
+    final double avatarWidth = math.min(
+      screenW * 0.55,
+      AppConstants.avatarCostumeWidth,
+    );
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -93,196 +266,167 @@ class _CostumePageState extends State<CostumePage> {
               ),
               child: Row(
                 children: [
-                  // Previous (back to dashboard)
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios),
                     onPressed: () => context.go(AppConstants.dashboardRoute),
                   ),
                   const Spacer(),
 
-                  // Clear button - clears previewed costume (user must press Save to persist removal)
+                  // Clear button - clears preview for current slot (user must press Save to persist removal)
                   TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _previewCostume = null;
-                      });
-                    },
+                    onPressed: () => _clearPreviewForSlot(slot),
                     child: const Text('Clear'),
                   ),
 
                   const SizedBox(width: 8),
 
-                  // Save button
+                  // Save button for current slot
                   TextButton(
-                    onPressed: _saveCostume,
+                    onPressed: _saveCurrentSlot,
                     child: const Text('Save'),
                   ),
                 ],
               ),
             ),
 
-            // Avatar with preview overlay
+            // Slot tabs
+            TabBar(
+              controller: _tabController,
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              tabs: const [
+                Tab(text: 'Head'),
+                Tab(text: 'Body'),
+              ],
+            ),
+
+            // Avatar with preview & saved overlays
             Expanded(
               child: Center(
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Avatar base
+                    // Avatar base (use exact filename present in assets/images)
                     Image.asset(
-                      'assets/images/avatar.png',
+                      'assets/images/Avatar.png',
                       width: avatarWidth,
                       height: avatarWidth,
                       fit: BoxFit.contain,
                     ),
 
-                    // Hat preview - align towards top of avatar and scale relative to avatar size
-                    if (_previewCostume != null)
-                      Align(
-                        alignment: Alignment(
-                          0,
-                          AppConstants.costumeHatAlignmentY,
-                        ),
-                        child: SizedBox(
-                          width: hatWidth,
-                          child: Transform.translate(
-                            offset:
-                                (AppConstants.costumeOffsets[_previewCostume ??
-                                        ''] ??
-                                    const Offset(0, 0)) +
-                                Offset(0, AppConstants.costumeLapOffsetY),
-                            child: Image.asset(
-                              'assets/images/$_previewCostume',
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Center(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.error,
-                                          color: Colors.red,
-                                          size: 28,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Failed to load: $_previewCostume',
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 10,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                            ),
-                          ),
-                        ),
+                    // Head overlay (preview if set else saved)
+                    if ((_previewBySlot['head'] ?? _savedBySlot['head']) !=
+                        null)
+                      _buildOverlayFor(
+                        _previewBySlot['head'] ?? _savedBySlot['head']!,
+                        'head',
+                        avatarWidth,
+                      ),
+
+                    // Body overlay
+                    if ((_previewBySlot['body'] ?? _savedBySlot['body']) !=
+                        null)
+                      _buildOverlayFor(
+                        _previewBySlot['body'] ?? _savedBySlot['body']!,
+                        'body',
+                        avatarWidth,
                       ),
                   ],
                 ),
               ),
             ),
 
-            // Debug / status: show current preview filename (helpful when assets don't appear)
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 6.0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _previewCostume == null
-                        ? 'Preview: (none)'
-                        : 'Preview: ${_previewCostume!}',
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-
+            // (Preview status text removed by request)
             const SizedBox(height: 12),
 
-            // Costume selection row with arrows
+            // Costume selection area for the current slot
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 16.0,
                 vertical: 12.0,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  // Left arrow
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, size: 36),
-                    onPressed: _windowStart > 0 ? _moveLeft : null,
-                  ),
-
-                  // Thumbnails
-                  Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: visible.map((file) {
-                        final fullPath = 'assets/images/$file';
-                        final selected = file == _previewCostume;
-                        return GestureDetector(
-                          onTap: () => _selectPreview(file),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 90,
-                                height: 90,
-                                decoration: BoxDecoration(
-                                  border: selected
-                                      ? Border.all(color: Colors.blue, width: 3)
-                                      : Border.all(
-                                          color: Colors.grey.shade300,
-                                          width: 1,
-                                        ),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(6.0),
-                                  child: Image.asset(
-                                    fullPath,
-                                    fit: BoxFit.contain,
-                                    errorBuilder:
-                                        (context, error, stackTrace) => Center(
-                                          child: Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.grey.shade400,
-                                          ),
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                file.split('.').first.replaceAll('_', ' '),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: selected
-                                      ? Colors.black
-                                      : Colors.grey.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Available ${slot[0].toUpperCase()}${slot.substring(1)} costumes',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-
-                  // Right arrow
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, size: 36),
-                    onPressed: _windowStart < (_costumeFiles.length - 3)
-                        ? _moveRight
-                        : null,
-                  ),
+                  const SizedBox(height: 8),
+                  if (available.isEmpty)
+                    Container(
+                      height: 110,
+                      alignment: Alignment.center,
+                      child: Text(
+                        'No costumes available for $slot. Add images to assets/images and list filenames in this page to enable.',
+                        style: TextStyle(color: Colors.grey.shade600),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      height: 120,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: available.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final file = available[index];
+                          final selected = _previewBySlot[slot] == file;
+                          return GestureDetector(
+                            onTap: () => _selectPreviewForSlot(slot, file),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 90,
+                                  height: 90,
+                                  decoration: BoxDecoration(
+                                    border: selected
+                                        ? Border.all(
+                                            color: Colors.blue,
+                                            width: 3,
+                                          )
+                                        : Border.all(
+                                            color: Colors.grey.shade300,
+                                            width: 1,
+                                          ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: Image.asset(
+                                      'assets/images/$file',
+                                      fit: BoxFit.contain,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Center(
+                                                child: Icon(
+                                                  Icons.image_not_supported,
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  file.split('.').first.replaceAll('_', ' '),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: selected
+                                        ? Colors.black
+                                        : Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),
