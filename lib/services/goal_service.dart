@@ -109,4 +109,19 @@ class GoalService {
       throw Exception(msg);
     }
   }
+
+  /// Convenience helper: fetch mutual goals for a given friend id.
+  /// This filters the full goals list client-side until backend provides
+  /// a dedicated endpoint.
+  Future<List<Map<String, dynamic>>> getMutualGoalsForFriend(int friendId) async {
+    final all = await getGoals();
+    return all.where((g) {
+      final type = (g['type'] ?? g['goal_type'] ?? '').toString().toLowerCase();
+      if (type != 'mutual') return false;
+      final fid = g['friend_id'] ?? g['friendId'] ?? g['friend_id_id'];
+      if (fid == friendId) return true;
+      if (fid == null && g['friend'] is Map && g['friend']['id'] == friendId) return true;
+      return false;
+    }).toList();
+  }
 }

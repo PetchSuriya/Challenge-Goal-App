@@ -183,6 +183,7 @@ class Avatar {
   final int? body;
   final int? hand;
   final int? accessory;
+  final Equipped? equipped; // parsed from backend (joined item objects)
 
   Avatar({
     required this.id,
@@ -194,6 +195,7 @@ class Avatar {
     this.body,
     this.hand,
     this.accessory,
+    this.equipped,
   });
 
   factory Avatar.fromJson(Map<String, dynamic> json) {
@@ -208,6 +210,9 @@ class Avatar {
       hand: _asInt(json['hand']),
       // 'accessory' may be an id or an object { id, ... } per backend response
       accessory: _asInt(json['accessory']),
+      equipped: (json['equipped'] is Map<String, dynamic>)
+          ? Equipped.fromJson(json['equipped'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -222,8 +227,76 @@ class Avatar {
       'body': body,
       'hand': hand,
       'accessory': accessory,
+      'equipped': equipped?.toJson(),
     };
   }
+}
+
+/// Per-slot equipped items container
+class Equipped {
+  final EquippedItem? head;
+  final EquippedItem? body;
+  final EquippedItem? hand;
+  final EquippedItem? accessory;
+
+  Equipped({this.head, this.body, this.hand, this.accessory});
+
+  factory Equipped.fromJson(Map<String, dynamic> json) {
+    EquippedItem? parse(String key) {
+      final v = json[key];
+      if (v is Map<String, dynamic> && v['id'] != null) {
+        return EquippedItem.fromJson(v);
+      }
+      return null;
+    }
+    return Equipped(
+      head: parse('head'),
+      body: parse('body'),
+      hand: parse('hand'),
+      accessory: parse('accessory'),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'head': head?.toJson(),
+        'body': body?.toJson(),
+        'hand': hand?.toJson(),
+        'accessory': accessory?.toJson(),
+      };
+}
+
+class EquippedItem {
+  final int id;
+  final String name;
+  final String slot;
+  final String? picture;
+  final String? type;
+
+  EquippedItem({
+    required this.id,
+    required this.name,
+    required this.slot,
+    this.picture,
+    this.type,
+  });
+
+  factory EquippedItem.fromJson(Map<String, dynamic> json) {
+    return EquippedItem(
+      id: _asInt(json['id']) ?? 0,
+      name: json['name']?.toString() ?? '',
+      slot: json['slot']?.toString() ?? '',
+      picture: json['picture']?.toString(),
+      type: json['type']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'slot': slot,
+        'picture': picture,
+        'type': type,
+      };
 }
 
 /// Friends data container
