@@ -125,10 +125,3 @@ app.*.map.json
 
 # Database
 Server/data.db
-
-# Playwright
-test-results/
-playwright-report/
-playwright/.cache/
-e2e-tests/screenshots/*.png
-!e2e-tests/screenshots/.gitkeep
