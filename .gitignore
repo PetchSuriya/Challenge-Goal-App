@@ -125,3 +125,9 @@ app.*.map.json
 
 # Database
 Server/data.db
+
+# Appium Testing
+appium-tests/test/screenshots/*.png
+!appium-tests/test/screenshots/.gitkeep
+appium-tests/node_modules/
+appium-tests/package-lock.json
