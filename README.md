@@ -1,18 +1,69 @@
-# LOGIN PASSWORD
+# Challenge Goal App - Collaborative Goal Tracking Application
 
-admin@bento.app / Bento2025!
+A full-stack mobile application built with Flutter (Frontend) and Node.js/Express (Backend) for tracking and sharing personal and group goals with friends.
 
-# Bento - Flutter Authentication App
+## 🔐 Demo Credentials
 
-A complete Flutter application with clean architecture, featuring authentication and user profile management. Built with modern Flutter best practices and scalable folder structure.
+**Test Account:**
+- Email: `admin@bento.app` or `JohnDoe@gmail.com`
+- Password: `Bento2025!`
 
-## 🚀 Features
+## 🏗️ System Architecture
 
-### Authentication
-- **User Login** with email and password
-- **JWT Token Management** with automatic storage and refresh
-- **Password Reset** via email
-- **Automatic Login State** persistence
+```
+┌─────────────────┐         ┌──────────────────┐         ┌─────────────────┐
+│                 │         │                  │         │                 │
+│  Flutter App    │◄───────►│  Node.js API     │◄───────►│  SQLite DB      │
+│  (Mobile UI)    │  HTTP   │  Express Server  │  SQL    │  (Local Store)  │
+│                 │         │  Port: 3000      │         │                 │
+└─────────────────┘         └──────────────────┘         └─────────────────┘
+```
+
+**Tech Stack:**
+- **Frontend:** Flutter 3.35.6 + Dart
+- **State Management:** Riverpod 2.6.1
+- **Backend:** Node.js + Express 4.18.2
+- **Database:** SQLite 5.1.6
+- **Authentication:** JWT + bcrypt
+- **HTTP Client:** Dio + axios
+
+## 📱 Bento - Flutter Goal Tracking Application
+
+A complete Flutter application with clean architecture, featuring authentication, goal management, friend collaboration, and avatar customization. Built with modern Flutter best practices and scalable folder structure.
+
+## 🚀 Key Features
+
+### 🔐 Authentication & User Management
+- **User Registration** with email validation
+- **Secure Login** with JWT token management
+- **Password Encryption** using bcrypt
+- **Session Management** with automatic token refresh
+- **Profile Management** with avatar customization
+
+### 🎯 Goal Management
+- **Personal Goals** - Create and track individual goals
+- **Group Goals** - Collaborate with friends on shared objectives
+- **Progress Tracking** - Monitor daily completion status
+- **Goal Categories** - Organize goals by type (fitness, learning, habits, etc.)
+- **Duration Management** - Set goal timelines and deadlines
+- **Reward System** - Earn items and achievements upon completion
+
+### 👥 Social Features
+- **Friend System** - Add and manage friends
+- **Mutual Goals** - View and participate in shared goals
+- **Friend Activity** - See friends' goal progress
+- **Collaborative Tracking** - Work together towards common objectives
+
+### 🎨 Avatar & Customization
+- **Avatar System** - Personalize your character
+- **Costume Items** - Unlock items through goal completion
+- **Inventory Management** - Collect and equip various items
+- **Item Slots** - Head, body, hand, and accessory customization
+
+### 📊 Dashboard & Analytics
+- **Progress Overview** - Visual representation of goal completion
+- **Statistics** - Track personal performance metrics
+- **Activity Feed** - Stay updated with friend activities
 
 ### Home Page
 - **Avatar Display** with 400x400dp PNG image support
