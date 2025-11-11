@@ -91,6 +91,19 @@ class AppConstants {
   // Costume feature
   static const String costumeRoute = '/costumes';
   static const String selectedCostumeKey = 'selected_costume';
+  // Key to persist owned/unlocked costume filenames
+  static const String ownedCostumesKey = 'owned_costumes';
+  // Default locked costumes (filenames as present in assets/images)
+  static const List<String> defaultLockedCostumes = [
+    'Black_cap.png',
+    'Blue_cap.png',
+    'Yellow_cap.png',
+    'Red_hat.png',
+    'White_hat.png',
+    'Blue_dress.png',
+    'Pink_dress.png',
+    'Yellow_dress.png',
+  ];
   // Per-slot selected costume keys (one item can be worn per slot)
   static const String selectedCostumeHeadKey = 'selected_costume_head';
   static const String selectedCostumeBodyKey = 'selected_costume_body';

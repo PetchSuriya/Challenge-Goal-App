@@ -26,6 +26,10 @@ class _CostumePageState extends State<CostumePage>
   // preview (not-saved) and saved maps per slot
   final Map<String, String?> _previewBySlot = {'head': null, 'body': null};
   final Map<String, String?> _savedBySlot = {'head': null, 'body': null};
+  // Owned/unlocked costumes stored persistently. If a costume is in the
+  // AppConstants.defaultLockedCostumes list but not in this set, it is
+  // considered locked and cannot be selected.
+  final Set<String> _ownedCostumes = <String>{};
 
   static const List<String> _slots = ['head', 'body'];
 
@@ -43,6 +47,7 @@ class _CostumePageState extends State<CostumePage>
     _populateCostumesFromAssetManifest().then((_) async {
       await _sanitizeSavedCostumes();
       await _loadSavedCostumes();
+      await _loadOwnedCostumes();
     });
   }
 
@@ -125,6 +130,37 @@ class _CostumePageState extends State<CostumePage>
       // default preview mirrors saved selection
       _previewBySlot['head'] = _savedBySlot['head'];
       _previewBySlot['body'] = _savedBySlot['body'];
+    });
+  }
+
+  Future<void> _loadOwnedCostumes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list =
+        prefs.getStringList(AppConstants.ownedCostumesKey) ?? <String>[];
+    // Ensure any currently saved/worn costumes are treated as owned so a user
+    // wearing a locked item doesn't suddenly lose it.
+    if (_savedBySlot['head'] != null && !list.contains(_savedBySlot['head'])) {
+      list.add(_savedBySlot['head']!);
+    }
+    if (_savedBySlot['body'] != null && !list.contains(_savedBySlot['body'])) {
+      list.add(_savedBySlot['body']!);
+    }
+    _ownedCostumes
+      ..clear()
+      ..addAll(list);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _unlockCostume(String file) async {
+    final prefs = await SharedPreferences.getInstance();
+    final list =
+        prefs.getStringList(AppConstants.ownedCostumesKey) ?? <String>[];
+    if (!list.contains(file)) {
+      list.add(file);
+      await prefs.setStringList(AppConstants.ownedCostumesKey, list);
+    }
+    setState(() {
+      _ownedCostumes.add(file);
     });
   }
 
@@ -375,45 +411,103 @@ class _CostumePageState extends State<CostumePage>
                         itemBuilder: (context, index) {
                           final file = available[index];
                           final selected = _previewBySlot[slot] == file;
+                          final isDefaultLocked = AppConstants
+                              .defaultLockedCostumes
+                              .contains(file);
+                          final isLocked =
+                              isDefaultLocked && !_ownedCostumes.contains(file);
                           return GestureDetector(
-                            onTap: () => _selectPreviewForSlot(slot, file),
+                            onTap: () {
+                              if (isLocked) {
+                                // Inform the user how to unlock
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'This costume is locked. Complete goals to unlock rewards.',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+                              _selectPreviewForSlot(slot, file);
+                            },
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  width: 90,
-                                  height: 90,
-                                  decoration: BoxDecoration(
-                                    border: selected
-                                        ? Border.all(
-                                            color: Colors.blue,
-                                            width: 3,
-                                          )
-                                        : Border.all(
-                                            color: Colors.grey.shade300,
-                                            width: 1,
-                                          ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(6.0),
-                                    child: Image.asset(
-                                      'assets/images/$file',
-                                      fit: BoxFit.contain,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Center(
-                                                child: Icon(
-                                                  Icons.image_not_supported,
-                                                  color: Colors.grey.shade400,
-                                                ),
+                                Stack(
+                                  children: [
+                                    Container(
+                                      width: 90,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        border: selected
+                                            ? Border.all(
+                                                color: Colors.blue,
+                                                width: 3,
+                                              )
+                                            : Border.all(
+                                                color: Colors.grey.shade300,
+                                                width: 1,
                                               ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: isLocked
+                                            ? Colors.grey.shade100
+                                            : null,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(6.0),
+                                        child: isLocked
+                                            // Show a blank area for locked costumes
+                                            ? const SizedBox.shrink()
+                                            : Image.asset(
+                                                'assets/images/$file',
+                                                fit: BoxFit.contain,
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) => Center(
+                                                      child: Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                        color: Colors
+                                                            .grey
+                                                            .shade400,
+                                                      ),
+                                                    ),
+                                              ),
+                                      ),
                                     ),
-                                  ),
+                                    if (isLocked)
+                                      Positioned.fill(
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(
+                                              0.35,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.lock,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  file.split('.').first.replaceAll('_', ' '),
+                                  isLocked
+                                      ? 'Locked'
+                                      : file
+                                            .split('.')
+                                            .first
+                                            .replaceAll('_', ' '),
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: selected
