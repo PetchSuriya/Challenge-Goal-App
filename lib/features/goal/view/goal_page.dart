@@ -181,7 +181,7 @@ class _GoalPageState extends State<GoalPage> {
                         secondProgress: null,
                         durationText: _durationTextFrom(g),
                         streakText: _streakTextFrom(g),
-                        completed: (g['status'] == 'completed'),
+                        completed: _completedFrom(g),
                         goalPicture: g['goal_picture'] as String?, // เพิ่มรูปภาพ
                         onRefresh: _loadGoals,
                       ),
@@ -568,4 +568,16 @@ int? _parseInt(dynamic v) {
   if (v is int) return v;
   if (v == null) return null;
   return int.tryParse('$v');
+}
+
+// Consider a goal completed if backend marks status/completed, or if
+// progress_days >= duration_days as a fallback.
+bool _completedFrom(Map<String, dynamic> g) {
+  final rawStatus = (g['status'] ?? '').toString().toLowerCase();
+  final statusDone = rawStatus == 'completed' || rawStatus == 'done' || rawStatus == 'finished';
+  final completedFlag = (g['completed'] == 1) || (g['completed'] == true);
+  if (statusDone || completedFlag) return true;
+  final prog = (g['progress_days'] is int) ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
+  final dur = (g['duration_days'] is int) ? g['duration_days'] as int : int.tryParse('${g['duration_days'] ?? 0}') ?? 0;
+  return dur > 0 && prog >= dur;
 }

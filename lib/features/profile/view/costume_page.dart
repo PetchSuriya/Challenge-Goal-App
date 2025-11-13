@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 import '../../../core/constants/app_constants.dart';
 import 'dart:math' as math;
+import '../../../services/costume_repository.dart';
 
 class CostumePage extends StatefulWidget {
   const CostumePage({super.key});
@@ -134,34 +135,18 @@ class _CostumePageState extends State<CostumePage>
   }
 
   Future<void> _loadOwnedCostumes() async {
+    final repo = CostumeRepository();
+    final owned = await repo.getOwned();
+    // Ensure currently saved items remain owned
+    final adjusted = owned.toSet();
+    if (_savedBySlot['head'] != null) adjusted.add(_savedBySlot['head']!);
+    if (_savedBySlot['body'] != null) adjusted.add(_savedBySlot['body']!);
     final prefs = await SharedPreferences.getInstance();
-    final list =
-        prefs.getStringList(AppConstants.ownedCostumesKey) ?? <String>[];
-    // Ensure any currently saved/worn costumes are treated as owned so a user
-    // wearing a locked item doesn't suddenly lose it.
-    if (_savedBySlot['head'] != null && !list.contains(_savedBySlot['head'])) {
-      list.add(_savedBySlot['head']!);
-    }
-    if (_savedBySlot['body'] != null && !list.contains(_savedBySlot['body'])) {
-      list.add(_savedBySlot['body']!);
-    }
+    await prefs.setStringList(AppConstants.ownedCostumesKey, adjusted.toList());
     _ownedCostumes
       ..clear()
-      ..addAll(list);
+      ..addAll(adjusted);
     if (mounted) setState(() {});
-  }
-
-  Future<void> _unlockCostume(String file) async {
-    final prefs = await SharedPreferences.getInstance();
-    final list =
-        prefs.getStringList(AppConstants.ownedCostumesKey) ?? <String>[];
-    if (!list.contains(file)) {
-      list.add(file);
-      await prefs.setStringList(AppConstants.ownedCostumesKey, list);
-    }
-    setState(() {
-      _ownedCostumes.add(file);
-    });
   }
 
   // Ensure saved costume filenames actually exist in the populated costume
@@ -199,17 +184,19 @@ class _CostumePageState extends State<CostumePage>
     if (mounted) setState(() {});
   }
 
-  Future<void> _saveCurrentSlot() async {
+  Future<void> _saveAllSlots() async {
     final prefs = await SharedPreferences.getInstance();
-    final slot = _slots[_currentTabIndex];
-    final val = _previewBySlot[slot];
-    final key = _slotToKey(slot);
-    if (val == null) {
-      await prefs.remove(key);
-      _savedBySlot[slot] = null;
-    } else {
-      await prefs.setString(key, val);
-      _savedBySlot[slot] = val;
+    // Persist both head and body using current preview selections
+    for (final slot in _slots) {
+      final val = _previewBySlot[slot];
+      final key = _slotToKey(slot);
+      if (val == null) {
+        await prefs.remove(key);
+        _savedBySlot[slot] = null;
+      } else {
+        await prefs.setString(key, val);
+        _savedBySlot[slot] = val;
+      }
     }
     if (!mounted) return;
     // After saving, navigate back to dashboard/home
@@ -233,10 +220,17 @@ class _CostumePageState extends State<CostumePage>
     });
   }
 
-  void _clearPreviewForSlot(String slot) {
-    setState(() {
+  Future<void> _clearAllSlots() async {
+    // Clear both preview and saved selections and persist removal
+    final prefs = await SharedPreferences.getInstance();
+    for (final slot in _slots) {
       _previewBySlot[slot] = null;
-    });
+      _savedBySlot[slot] = null;
+    }
+    await prefs.remove(AppConstants.selectedCostumeHeadKey);
+    await prefs.remove(AppConstants.selectedCostumeBodyKey);
+    if (!mounted) return;
+    setState(() {});
   }
 
   Widget _buildOverlayFor(String file, String slot, double avatarWidth) {
@@ -308,17 +302,17 @@ class _CostumePageState extends State<CostumePage>
                   ),
                   const Spacer(),
 
-                  // Clear button - clears preview for current slot (user must press Save to persist removal)
+                  // Clear button - clears preview for BOTH slots (user must press Save to persist)
                   TextButton(
-                    onPressed: () => _clearPreviewForSlot(slot),
+                    onPressed: _clearAllSlots,
                     child: const Text('Clear'),
                   ),
 
                   const SizedBox(width: 8),
 
-                  // Save button for current slot
+                  // Save button - saves BOTH head and body selections
                   TextButton(
-                    onPressed: _saveCurrentSlot,
+                    onPressed: _saveAllSlots,
                     child: const Text('Save'),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/auth_service.dart';
 import '../../../features/profile/model/user_model.dart';
+import '../../../core/config/api_config.dart';
 
 // Login state
 class LoginState {
@@ -42,6 +43,8 @@ class LoginController extends StateNotifier<LoginState> {
 
     try {
       print('Login controller: attempting login with $email');
+      // Debug which base URL is being used for API calls
+      print('BASE: ${ApiConfig.baseUrl}');
       final result = await _authService.login(email, password);
 
       print('Login controller: result isSuccess = ${result.isSuccess}');

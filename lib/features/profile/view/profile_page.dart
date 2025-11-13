@@ -184,8 +184,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       foregroundColor: Colors.black,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios),
-        // Navigate back to home instead of login/previous page
-        onPressed: () => context.go(AppConstants.homeRoute),
+        // Navigate home if logged in, otherwise go to login
+        onPressed: () async {
+          final isLoggedIn = await ref.read(authServiceProvider).isLoggedIn();
+          if (!mounted) return;
+          context.go(isLoggedIn ? AppConstants.homeRoute : AppConstants.loginRoute);
+        },
       ),
     );
   }
@@ -199,7 +203,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     // แสดงข้อความเมื่อไม่มีข้อมูล user
     if (state.user == null) {
-      return const Center(child: Text('No user data available'));
+      // หากไม่มีข้อมูลผู้ใช้ ให้เปลี่ยนเส้นทางไปหน้า Login ทันที
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final isLoggedIn = await ref.read(authServiceProvider).isLoggedIn();
+        if (!mounted) return;
+        context.go(isLoggedIn ? AppConstants.homeRoute : AppConstants.loginRoute);
+      });
+      return const Center(child: Text('Redirecting to login…'));
     }
 
     // แสดงเนื้อหาหลักเมื่อมีข้อมูล
@@ -1183,9 +1193,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // === Dialog Methods ===
 
   /// แสดง Dialog ยืนยันการล็อกเอาต์
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext rootContext) {
     showDialog(
-      context: context,
+      context: rootContext,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
@@ -1208,11 +1218,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           ElevatedButton(
             onPressed: () async {
+              // Close the dialog using its own context
               Navigator.of(context).pop();
-              await ref.read(profileControllerProvider.notifier).logout();
-              if (context.mounted) {
-                context.go(AppConstants.loginRoute);
+              // Navigate immediately using the root page context (not the dialog context)
+              if (mounted) {
+                rootContext.go(AppConstants.loginRoute);
               }
+              // Then perform logout cleanup
+              await ref.read(profileControllerProvider.notifier).logout();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade600,

@@ -1,17 +1,12 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+// Centralized API configuration for the app
 
 class ApiConfig {
   ApiConfig._();
 
-  // Detect correct base host for emulator/desktop/web
-  static String get baseHost {
-    if (kIsWeb) return 'http://localhost:3000';
-    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:3000';
-    // iOS simulator, Windows, macOS, Linux desktop
-    return 'http://127.0.0.1:3000';
-  }
-
-  static String get baseUrl => baseHost; // no '/api' suffix to compose freely
+  // Deployed backend URL (override with --dart-define=API_BASE_URL=... if needed)
+  static const String _defaultBaseUrl = 'https://challenge-goal-app.onrender.com';
+  static const String baseUrl =
+      String.fromEnvironment('API_BASE_URL', defaultValue: _defaultBaseUrl);
 
   // REST endpoints
   static String get loginEndpoint => '$baseUrl/api/login';

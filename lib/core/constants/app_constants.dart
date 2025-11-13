@@ -95,11 +95,11 @@ class AppConstants {
   static const String ownedCostumesKey = 'owned_costumes';
   // Default locked costumes (filenames as present in assets/images)
   static const List<String> defaultLockedCostumes = [
-    'Black_cap.png',
-    'Blue_cap.png',
+    'Black_Cap.png',
+    'Blue_Cap.png',
     'Yellow_cap.png',
-    'Red_hat.png',
-    'White_hat.png',
+    'Red_Hat.png',
+    'White_Hat.png',
     'Blue_dress.png',
     'Pink_dress.png',
     'Yellow_dress.png',
@@ -131,11 +131,11 @@ class AppConstants {
   // below for per-context tuning. The legacy `costumeOffsets` map was
   // removed to avoid duplication; if you need a global map, reintroduce it.
   static const Map<String, Offset> costumeOffsetsPreview = {
-    'Black_cap.png': Offset(-15, -60),
-    'Blue_cap.png': Offset(-15, -60),
+    'Black_Cap.png': Offset(-15, -60),
+    'Blue_Cap.png': Offset(-15, -60),
     'Green_hat.png': Offset(-5, -75),
-    'Red_hat.png': Offset(-5, -75),
-    'White_hat.png': Offset(-5, -75),
+    'Red_Hat.png': Offset(-5, -75),
+    'White_Hat.png': Offset(-5, -75),
     'Yellow_cap.png': Offset(-15, -60),
     'Black_suit.png': Offset(0, 6),
     'Blue_suit.png': Offset(0, 6),
@@ -145,11 +145,11 @@ class AppConstants {
     'Yellow_dress.png': Offset(-4, 8),
   };
   static const Map<String, Offset> costumeOffsetsHome = {
-    'Black_cap.png': Offset(-40, -16),
-    'Blue_cap.png': Offset(-40, -16),
+    'Black_Cap.png': Offset(-40, -16),
+    'Blue_Cap.png': Offset(-40, -16),
     'Green_hat.png': Offset(-25, -40),
-    'Red_hat.png': Offset(-25, -40),
-    'White_hat.png': Offset(-25, -40),
+    'Red_Hat.png': Offset(-25, -40),
+    'White_Hat.png': Offset(-25, -40),
     'Yellow_cap.png': Offset(-40, -16),
     'Black_suit.png': Offset(-20, 4),
     'Blue_suit.png': Offset(-20, 4),
@@ -162,12 +162,12 @@ class AppConstants {
   // These are computed from the pixel maps above using reference avatar width = 400.
   // Using normalized offsets keeps placement proportional on different screen sizes.
   static const Map<String, Offset> costumeOffsetsPreviewNormalized = {
-    'Black_cap.png': Offset(-0.05, 0.14),
-    'Blue_cap.png': Offset(-0.05, 0.14),
+    'Black_Cap.png': Offset(-0.05, 0.14),
+    'Blue_Cap.png': Offset(-0.05, 0.14),
     'Yellow_cap.png': Offset(-0.05, 0.14),
     'Green_hat.png': Offset(-0.0125, 0.1),
-    'Red_hat.png': Offset(-0.0125, 0.09),
-    'White_hat.png': Offset(-0.0125, 0.09),
+    'Red_Hat.png': Offset(-0.0125, 0.09),
+    'White_Hat.png': Offset(-0.0125, 0.09),
     'Black_suit.png': Offset(0.0, -0.01),
     'Blue_suit.png': Offset(-0.005, -0.01),
     'Brown_suit.png': Offset(0.0, -0.01),
@@ -176,12 +176,12 @@ class AppConstants {
     'Yellow_dress.png': Offset(-0.015, 0.02),
   };
   static const Map<String, Offset> costumeOffsetsHomeNormalized = {
-    'Black_cap.png': Offset(-0.05, -0.03),
-    'Blue_cap.png': Offset(-0.05, -0.03),
+    'Black_Cap.png': Offset(-0.05, -0.03),
+    'Blue_Cap.png': Offset(-0.05, -0.03),
     'Yellow_cap.png': Offset(-0.05, -0.03),
     'Green_hat.png': Offset(-0.015, -0.09),
-    'Red_hat.png': Offset(-0.015, -0.1),
-    'White_hat.png': Offset(-0.015, -0.1),
+    'Red_Hat.png': Offset(-0.015, -0.1),
+    'White_Hat.png': Offset(-0.015, -0.1),
     'Black_suit.png': Offset(-0.003, 0.01),
     'Blue_suit.png': Offset(-0.003, 0.01),
     'Brown_suit.png': Offset(-0.003, 0.01),
@@ -193,12 +193,12 @@ class AppConstants {
   static const double costumeLapOffsetYNormalized = 0.05; // 20 / 400
   // Per-context scales for preview vs home rendering
   static const Map<String, double> costumeScalesPreview = {
-    'Black_cap.png': 0.68,
-    'Blue_cap.png': 0.65,
+    'Black_Cap.png': 0.68,
+    'Blue_Cap.png': 0.65,
     'Yellow_cap.png': 0.65,
     'Green_hat.png': 0.62,
-    'Red_hat.png': 0.62,
-    'White_hat.png': 0.62,
+    'Red_Hat.png': 0.62,
+    'White_Hat.png': 0.62,
     'Black_suit.png': 0.38,
     'Blue_suit.png': 0.37,
     'Brown_suit.png': 0.38,
@@ -207,12 +207,12 @@ class AppConstants {
     'Yellow_dress.png': 0.60,
   };
   static const Map<String, double> costumeScalesHome = {
-    'Black_cap.png': 0.67,
-    'Blue_cap.png': 0.65,
+    'Black_Cap.png': 0.67,
+    'Blue_Cap.png': 0.65,
     'Yellow_cap.png': 0.65,
     'Green_hat.png': 0.60,
-    'Red_hat.png': 0.60,
-    'White_hat.png': 0.60,
+    'Red_Hat.png': 0.60,
+    'White_Hat.png': 0.60,
     'Black_suit.png': 0.38,
     'Blue_suit.png': 0.38,
     'Brown_suit.png': 0.38,
