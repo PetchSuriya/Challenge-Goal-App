@@ -66,6 +66,24 @@ class GoalService {
     throw Exception('Failed to load logs');
   }
 
+  /// Raw logs including user_id and date for a goal.
+  /// Returns a list of maps: { 'user_id': int, 'date': 'YYYY-MM-DD' }
+  Future<List<Map<String, dynamic>>> getLogsRaw(int goalId) async {
+    final res = await _http.get(ApiConfig.goalLogsEndpoint(goalId));
+    if (res.statusCode == 200 && res.data is List) {
+      final List list = res.data as List;
+      return list.map((e) {
+        final uid = e['user_id'];
+        final date = (e['date']?.toString() ?? '').trim();
+        return {
+          'user_id': (uid is int) ? uid : int.tryParse('$uid'),
+          'date': date,
+        };
+      }).where((m) => m['user_id'] != null && (m['date'] as String).isNotEmpty).toList();
+    }
+    throw Exception('Failed to load logs');
+  }
+
   Future<void> logDay(int goalId, DateTime day, {String? description}) async {
     final dateStr = '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
     final res = await _http.post(

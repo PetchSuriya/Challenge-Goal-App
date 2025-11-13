@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../services/costume_repository.dart';
 import '../../../services/goal_service.dart';
+import '../../../services/friends_service.dart';
+import '../../../services/auth_service.dart';
 
 class GoalDetailArgs {
   final int? goalId; // backend goal id for fetching logs
@@ -47,6 +50,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
   late bool isMutual;
   late String friendName;
   late int friendCompleted;
+  int? _friendId;
+  int? _currentUserId;
+  List<_ParticipantProgress> _participants = [];
 
   // Calendar state
   CalendarFormat _calendarFormat = CalendarFormat.month;
@@ -167,7 +173,9 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       final g = await _goalService.getGoal(id);
       setState(() {
         title = (g['title'] ?? title) as String;
-        category = (g['type'] == 'group') ? 'Mutual' : (g['category'] ?? category);
+        final t = (g['type'] ?? '').toString().toLowerCase();
+        category = (t == 'group' || t == 'mutual') ? 'Mutual' : (g['category'] ?? category);
+        isMutual = (t == 'group' || t == 'mutual') || isMutual;
         // Parse start/end date from backend (accept snake_case or camelCase)
         final sdRaw = g['start_date'] ?? g['startDate'];
         final edRaw = g['end_date'] ?? g['endDate'];
@@ -190,7 +198,16 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
         final int prog = g['progress_days'] is int ? g['progress_days'] as int : int.tryParse('${g['progress_days'] ?? 0}') ?? 0;
         completed = prog.clamp(0, totalDays);
         currentStreak = prog; // simple approximation
+        // capture friend id if present
+        final fidDyn = g['friend_id'] ?? g['friendId'];
+        if (fidDyn != null) {
+          _friendId = (fidDyn is int) ? fidDyn : int.tryParse('$fidDyn');
+        }
       });
+      // After loading goal meta, attempt to load participants list if mutual
+      if (mounted && isMutual) {
+        await _loadParticipants();
+      }
     } catch (e) {
       // ignore detail load errors
     }
@@ -200,6 +217,70 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
     final m = RegExp(r"(\d+)").firstMatch(text);
     if (m != null) return int.tryParse(m.group(1)!);
     return null;
+  }
+
+  Future<void> _loadParticipants() async {
+    if (goalId == null) return;
+    try {
+      // current user id from cached profile
+      final me = await AuthService().getUserData();
+      _currentUserId = int.tryParse(me?.id ?? '');
+
+      // Start with known ids: current + friendId if any
+      final ids = <int>{};
+      if (_currentUserId != null) ids.add(_currentUserId!);
+      if (_friendId != null) ids.add(_friendId!);
+
+      // Collect logs and compute per-user unique-day counts
+      final logs = await _goalService.getLogsRaw(goalId!);
+      final Map<int, Set<String>> perUserDates = {};
+      for (final m in logs) {
+        final uid = m['user_id'] as int;
+        final date = (m['date'] as String);
+        ids.add(uid);
+        perUserDates.putIfAbsent(uid, () => <String>{}).add(date);
+      }
+
+      // Resolve usernames and build list
+      final fs = FriendsService();
+      final List<_ParticipantProgress> parts = [];
+      for (final uid in ids) {
+        try {
+          final u = await fs.getUserById(uid);
+          final days = (perUserDates[uid]?.length ?? 0);
+          final frac = (totalDays == 0) ? 0.0 : (days / totalDays).clamp(0.0, 1.0);
+          parts.add(_ParticipantProgress(
+            userId: uid,
+            name: (uid == _currentUserId) ? 'You' : u.username,
+            days: days,
+            progress: frac,
+          ));
+          // also set friendName/progress for legacy single-friend UI if this uid matches friend
+          if (_friendId != null && uid == _friendId) {
+            setState(() {
+              friendName = u.username;
+              friendCompleted = days;
+            });
+          }
+        } catch (_) {
+          // ignore resolution failures
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        // sort: current user first, then others by name
+        parts.sort((a, b) {
+          if (_currentUserId != null) {
+            if (a.userId == _currentUserId && b.userId != _currentUserId) return -1;
+            if (b.userId == _currentUserId && a.userId != _currentUserId) return 1;
+          }
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+        _participants = parts;
+      });
+    } catch (e) {
+      // ignore participants load failures to keep page usable
+    }
   }
 
   void _markTodayDone() async {
@@ -260,6 +341,114 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       // set a long streak to reflect completion (optional)
       currentStreak = totalDays;
     });
+    _dirtyProgress = true; // ensure list refreshes on back
+    // Try unlocking a random costume and show popup if any.
+    _handleUnlockReward();
+  }
+
+  Future<void> _handleUnlockReward() async {
+    final repo = CostumeRepository();
+    final unlocked = await repo.unlockRandom();
+    if (!mounted) return;
+    if (unlocked == null) {
+      return; // nothing to unlock
+    }
+    final name = _friendlyName(unlocked);
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFD4C7A), Color(0xFF9B5BFF)],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.lock_open, color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'New costume unlocked! ',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "You've unlocked: $name",
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 14,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Simple preview using asset image
+              FutureBuilder(
+                future: precacheImage(AssetImage('assets/images/$unlocked'), context).then((_) => true).catchError((_) => false),
+                builder: (ctx, snap) {
+                  final ok = snap.connectionState == ConnectionState.done && (snap.data == true);
+                  return Center(
+                    child: ok
+                        ? Image.asset(
+                            'assets/images/$unlocked',
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.contain,
+                          )
+                        : Container(
+                            width: 120,
+                            height: 120,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: const Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
+                          ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                ),
+                child: const Text('OK'),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _friendlyName(String file) {
+    final base = file.split('/').last.split('.').first; // strip path + ext
+    final words = base.replaceAll('_', ' ').split(' ');
+    return words.map((w) => w.isEmpty ? w : (w[0].toUpperCase() + w.substring(1))).join(' ');
   }
 
   Future<void> _maybePromptFinish() async {
@@ -753,40 +942,44 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
                           ),
                         ),
                       ),
-                      if (isMutual) ...[
+                      if (isMutual && _participants.any((p) => p.userId != _currentUserId)) ...[
                         const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Text(
-                              friendName,
-                              style: const TextStyle(color: Colors.black),
-                            ),
-                            const Spacer(),
-                            Text(
-                              '${(friendProgress * 100).round()}%',
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
+                        // Render each participant (excluding current user)
+                        for (final p in _participants.where((pp) => pp.userId != _currentUserId)) ...[
+                          Row(
+                            children: [
+                              Text(
+                                p.name,
+                                style: const TextStyle(color: Colors.black),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0, end: friendProgress),
-                          duration: const Duration(milliseconds: 400),
-                          builder: (context, value, _) => ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: value,
-                              minHeight: 10,
-                              backgroundColor: Colors.grey.shade200,
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.green,
+                              const Spacer(),
+                              Text(
+                                '${(p.progress * 100).round()}%',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0, end: p.progress),
+                            duration: const Duration(milliseconds: 400),
+                            builder: (context, value, _) => ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: LinearProgressIndicator(
+                                value: value,
+                                minHeight: 10,
+                                backgroundColor: Colors.grey.shade200,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.green,
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                        ],
                       ],
                       const SizedBox(height: 12),
                       Row(
@@ -1105,4 +1298,17 @@ class _GradientPrimaryButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ParticipantProgress {
+  final int userId;
+  final String name;
+  final int days;
+  final double progress;
+  _ParticipantProgress({
+    required this.userId,
+    required this.name,
+    required this.days,
+    required this.progress,
+  });
 }
