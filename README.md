@@ -46,7 +46,7 @@ A complete Flutter application with clean architecture, featuring authentication
 - **Progress Tracking** - Monitor daily completion status
 - **Goal Categories** - Organize goals by type (fitness, learning, habits, etc.)
 - **Duration Management** - Set goal timelines and deadlines
-- **Reward System** - Earn items and achievements upon completion
+- **Reward System** - Earn items upon completion
 
 ### 👥 Social Features
 - **Friend System** - Add and manage friends
