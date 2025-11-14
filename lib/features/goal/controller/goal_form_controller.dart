@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../model/goal_form_state.dart';
 import '../../../services/goal_service.dart';
 import '../../../services/friends_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Goal Form Controller - จัดการ Business Logic ของ Goal Form
 class GoalFormController extends ChangeNotifier {
@@ -123,33 +124,49 @@ class GoalFormController extends ChangeNotifier {
     final type = _state.selectedGoalType == 'Mutual' ? 'mutual' : 'single';
     final durationText = '${_state.durationDays} days';
 
-    // Determine friendId when mutual: map selected name to id from current friends list
+    // Determine participants when mutual: map all selected names to ids
+    // We'll still send the first friendId to the backend for compatibility,
+    // but persist the full set locally so Goal Details can show all selected participants.
     int? friendId;
+    List<int> participantIds = [];
     if (_state.isMutualGoal && _state.selectedFriends.isNotEmpty) {
       try {
-  final friendsData = await FriendsService().getFriends();
-        final selectedName = _state.selectedFriends.first;
-        final match = friendsData.friends.firstWhere(
-          (u) => u.username.toLowerCase() == selectedName.toLowerCase(),
-          orElse: () => friendsData.friends.first,
-        );
-        friendId = match.id;
+        final friendsData = await FriendsService().getFriends();
+        final selectedLower = _state.selectedFriends.map((s) => s.toLowerCase()).toList();
+        for (final u in friendsData.friends) {
+          if (selectedLower.contains(u.username.toLowerCase())) {
+            participantIds.add(u.id);
+          }
+        }
+        if (participantIds.isNotEmpty) {
+          friendId = participantIds.first;
+        }
       } catch (_) {
-        // ignore mapping failure; friendId stays null
+        // ignore mapping failure
       }
     }
 
     // Call API
-    return await svc.createGoal(
+    final created = await svc.createGoal(
       title: titleController.text,
       durationDays: _state.durationDays,
       durationText: durationText,
       category: _state.selectedCategory,
       type: type,
       friendId: friendId,
+      participantIds: participantIds,
       startDate: _state.selectedDateRange?.start,
       goalPicture: goalPictureBase64,
     );
+    // Persist full participant list locally for rendering in details
+    try {
+      if (created['goal_id'] != null && participantIds.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final key = 'goal:${created['goal_id']}:participants';
+        await prefs.setStringList(key, participantIds.map((e) => e.toString()).toList());
+      }
+    } catch (_) {}
+    return created;
   }
 
   /// Reset form
