@@ -143,7 +143,7 @@ async function getNotesByUser(userId) {
 }
 
 // --- Goals / Goal logs helpers ---
-async function createGoal(userId, title, description = null, duration = null, durationDays = null, category = null, type = 'single', friendId = null, startDate = null, goalPicture = null) {
+async function createGoal(userId, title, description = null, duration = null, durationDays = null, category = null, type = 'single', friendId = null, participantIds = [], startDate = null, goalPicture = null) {
   // If this is a group goal with a single friend selected, create separate goal rows for each collaborator
   // so each user has their own goal record and progress. This avoids blocking other collaborators when one completes.
   try {
@@ -163,9 +163,16 @@ async function createGoal(userId, title, description = null, duration = null, du
     try {
       await run('INSERT OR IGNORE INTO goal_participants (goal_id, user_id, progress_days, last_completed_at) VALUES (?, ?, 0, NULL)', [goalId, userId]);
     } catch (e) { console.error('createGoal participant insert error', e && e.message ? e.message : e); }
-
-    // if group and a friend is specified, create a separate goal row for the friend (their own copy)
-    if (type === 'group' && friendId && friendId !== userId) {
+    // If participantIds provided (backend-proper multi participants), insert them as participants for THIS goal id
+    if (Array.isArray(participantIds) && participantIds.length > 0) {
+      for (const pid of participantIds) {
+        if (!pid || pid === userId) continue;
+        try {
+          await run('INSERT OR IGNORE INTO goal_participants (goal_id, user_id, progress_days, last_completed_at) VALUES (?, ?, 0, NULL)', [goalId, pid]);
+        } catch (e) { console.error('createGoal participantIds insert error', e && e.message ? e.message : e); }
+      }
+    } else if ((type === 'group' || type === 'mutual') && friendId && friendId !== userId) {
+      // Legacy behavior: if only one friendId specified and no participantIds array, create friend copy goal
       try {
         const res2 = await run(
           `INSERT INTO goals (user_id, title, description, duration, category, type, friend_id, status, start_date, goal_picture, created_at)
@@ -177,7 +184,6 @@ async function createGoal(userId, title, description = null, duration = null, du
           try { await run('UPDATE goals SET duration_days = ? WHERE goal_id = ?', [durationDays, friendGoalId]); } catch (e) { /* ignore */ }
           try { if (duration) await run('UPDATE goals SET duration = ? WHERE goal_id = ?', [duration, friendGoalId]); } catch (e) { /* ignore */ }
         }
-        // ensure friend is participant of their own goal
         try { await run('INSERT OR IGNORE INTO goal_participants (goal_id, user_id, progress_days, last_completed_at) VALUES (?, ?, 0, NULL)', [friendGoalId, friendId]); } catch (e) { console.error('createGoal friend participant insert error', e && e.message ? e.message : e); }
       } catch (e) {
         console.error('failed to create friend copy of group goal', e && e.message ? e.message : e);
@@ -336,6 +342,14 @@ async function setGoalStatus(goalId, status) {
   return { ok: true };
 }
 
+// List participants (id, username) for a goal
+async function getParticipantsForGoal(goalId) {
+  return all(`SELECT u.id, u.username
+    FROM goal_participants gp JOIN users u ON u.id = gp.user_id
+    WHERE gp.goal_id = ?
+    ORDER BY CASE WHEN u.id = (SELECT user_id FROM goals WHERE goal_id = ?) THEN 0 ELSE 1 END, u.username COLLATE NOCASE ASC`, [goalId, goalId]);
+}
+
 // Delete a log for a specific day; if it was the last log for that day, decrement participant progress
 async function deleteLogForDay(goalId, userId, date) {
   if (!date) throw new Error('Missing date');
@@ -461,6 +475,7 @@ module.exports = {
   setGoalStatus,
   deleteLogForDay,
   deleteGoalCascade,
+  getParticipantsForGoal,
   // avatars/items helpers
   // returns avatars for a user
   async getAvatarsByUser(userId) {

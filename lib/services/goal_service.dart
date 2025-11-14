@@ -29,6 +29,7 @@ class GoalService {
     String? category,
     String type = 'single',
     int? friendId,
+    List<int>? participantIds,
     DateTime? startDate,
     String? goalPicture,
   }) async {
@@ -40,6 +41,7 @@ class GoalService {
       if (category != null) 'category': category,
       'type': type,
       if (friendId != null) 'friend_id': friendId,
+      if (participantIds != null && participantIds.isNotEmpty) 'participant_ids': participantIds,
       if (startDate != null)
         'start_date': '${startDate.year.toString().padLeft(4, '0')}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}',
       if (goalPicture != null) 'goal_picture': goalPicture,
@@ -82,6 +84,16 @@ class GoalService {
       }).where((m) => m['user_id'] != null && (m['date'] as String).isNotEmpty).toList();
     }
     throw Exception('Failed to load logs');
+  }
+
+  /// Get participants for a goal: [{ id, username }]
+  Future<List<Map<String, dynamic>>> getParticipants(int goalId) async {
+    final res = await _http.get('${ApiConfig.goalsEndpoint()}/$goalId/participants');
+    if (res.statusCode == 200 && res.data is List) {
+      final List list = res.data as List;
+      return list.map((e) => (e as Map).cast<String, dynamic>()).toList();
+    }
+    throw Exception('Failed to load participants');
   }
 
   Future<void> logDay(int goalId, DateTime day, {String? description}) async {

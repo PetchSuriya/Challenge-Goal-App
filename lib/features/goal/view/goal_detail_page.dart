@@ -226,8 +226,13 @@ class _GoalDetailPageState extends State<GoalDetailPage> {
       final me = await AuthService().getUserData();
       _currentUserId = int.tryParse(me?.id ?? '');
 
-      // Start with known ids: current + friendId if any
+      // Fetch participants from backend (authoritative)
+      final backendParticipants = await _goalService.getParticipants(goalId!);
       final ids = <int>{};
+      for (final p in backendParticipants) {
+        final v = p['id'];
+        if (v is int) ids.add(v); else { final pv = int.tryParse('$v'); if (pv != null) ids.add(pv); }
+      }
       if (_currentUserId != null) ids.add(_currentUserId!);
       if (_friendId != null) ids.add(_friendId!);
 

@@ -305,11 +305,25 @@ app.get('/api/goals', requireAuth, async (req, res) => {
 
 app.post('/api/goals', requireAuth, async (req, res) => {
   try {
-    const { title, description, duration, duration_days, category, type, friend_id, start_date, goal_picture, picture } = req.body;
+    const { title, description, duration, duration_days, category, type, friend_id, participant_ids, start_date, goal_picture, picture } = req.body;
     if (!title) return res.status(400).json({ error: 'Missing title' });
     const friendId = friend_id ? Number(friend_id) : null;
     const durDays = duration_days ? Number(duration_days) : null;
     const goalPic = goal_picture || picture || null;
+    // Normalize participant_ids to an array of integers
+    let participants = [];
+    if (participant_ids) {
+      if (Array.isArray(participant_ids)) {
+        participants = participant_ids.map((x) => Number(x)).filter((n) => !!n);
+      } else if (typeof participant_ids === 'string') {
+        participants = participant_ids.split(',').map((s) => Number(s.trim())).filter((n) => !!n);
+      } else if (typeof participant_ids === 'number') {
+        participants = [Number(participant_ids)];
+      }
+      // Remove current user if somehow included; they'll be inserted automatically
+      participants = participants.filter((id) => id && id !== req.session.user.id);
+    }
+
     const goal = await dbModule.createGoal(
       req.session.user.id,
       title,
@@ -319,6 +333,7 @@ app.post('/api/goals', requireAuth, async (req, res) => {
       category,
       type || 'single',
       friendId,
+      participants,
       start_date,
       goalPic
     );
@@ -335,6 +350,19 @@ app.get('/api/goals/:id', requireAuth, async (req, res) => {
     const participant = await dbModule.get('SELECT 1 FROM goal_participants WHERE goal_id = ? AND user_id = ? LIMIT 1', [id, req.session.user.id]);
     if (!participant) return res.status(403).json({ error: 'Forbidden' });
     res.json(goal);
+  } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
+});
+
+// Participants for a goal (id + username). Only visible to participants
+app.get('/api/goals/:id/participants', requireAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'Invalid id' });
+    // ensure requester is participant
+    const participant = await dbModule.get('SELECT 1 FROM goal_participants WHERE goal_id = ? AND user_id = ? LIMIT 1', [id, req.session.user.id]);
+    if (!participant) return res.status(403).json({ error: 'Forbidden' });
+    const users = await dbModule.getParticipantsForGoal(id);
+    res.json(users);
   } catch (e) { console.error(e); res.status(500).json({ error: 'DB error' }); }
 });
 
